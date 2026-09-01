@@ -55,12 +55,18 @@ Only the `Planner / Coordinator` may trigger `Reviewer`. One review run is one r
 
 ## Human Gates
 
-- PRD confirmation.
-- Authorization to open the Final PR.
-- Final PR review and merge, done on GitHub.
+- PRD confirmation. Unconditional: it applies even when the request arrives
+  fully specified. A supplied spec is input, not approval — the Coordinator
+  still moves the parent to `prd_draft`, restates the spec plus the decisions
+  it leaves open, and waits. No child issue may exist before that approval.
+- Final PR review and merge, done on GitHub. Note there is deliberately NO gate
+  in front of opening the Final PR: opening a PR is not merging one, and that
+  PR is the gate itself. Asking permission to create it is a gate in front of a
+  gate — a round-trip that buys nothing, since a human who disagrees can just
+  close it.
 - `done` is written by a human. Agents land at `in_review`.
 
-The Builder PR (`work_branch -> source_branch`) is an internal integration step. After Reviewer approval the `Planner / Coordinator` merges it where policy allows, and otherwise asks a human to merge and waits. Once the merge is done and the reviewed head is verified to be in `source_branch`, obtain human authorization to open the Final PR. The Final PR is the human review gate: agents open it, move the parent to `in_review`, and stop.
+The Builder PR (`work_branch -> source_branch`) is an internal integration step. After Reviewer approval the `Planner / Coordinator` merges it where policy allows, and otherwise asks a human to merge and waits. Once the merge is done and the reviewed head is verified to be in `source_branch`, the Coordinator opens the Final PR itself, then runs the mandatory final review against that PR. The Final PR is the human review gate: agents open it, review it, move the parent to `in_review`, and stop.
 
 ## Status Model
 
@@ -122,12 +128,36 @@ The Coordinator is the squad leader. The platform does not do these for it:
 
 - **Squads do not fan out.** Assigning an issue to the squad enqueues the leader
   only. The Coordinator creates child issues and assigns each to a named member.
-- **Members never assign to each other.** Every handoff returns to the Coordinator.
+- **Members never assign to each other.** Every handoff returns to the
+  Coordinator, and the handback assignment is the wake signal — it must never
+  carry `--no-start`. Suppressing it leaves the issue looking correctly handed
+  back while no run exists, and the chain stops with no error. This is the only
+  mechanism that advances work between agents, so it is the single most
+  load-bearing line in the contract.
 - **Dependency ordering uses `--stage N`.** The leader is woken only when every
   sub-issue in a stage finishes.
 - **Review is its own child issue assigned to the Reviewer** — a separate run
   with fresh context, a stronger isolation boundary than a sub-agent, and it
   removes author bias.
+- **One review per stage, not per ticket**, plus one mandatory final review over
+  the whole of `source_branch` before the Final PR. A slice never ships on its
+  own — everything lands as one Final PR — so reviewing per slice gates
+  something that has no gate, and ten tickets would cost thirty agent sessions.
+  Stage boundaries are where a mistake starts getting expensive, so that is
+  where review belongs. The final pass is the only one that can see cross-slice
+  problems, and it is not optional.
+- **No agent creates an issue that carries an open question.** An issue is a
+  unit of work someone will do; a question is a question. Goal, scope,
+  acceptance criteria and every product decision must be settled before the
+  issue exists — most of them during planning, before any slicing. Non-blocking
+  review findings and inspection recommendations are surfaced as proposals in a
+  comment, and become issues only once a human asks for them.
+- **Children close at `done`; the parent does not.** Once a stage's review
+  approves, the Coordinator moves that stage's children to `done`. The stage
+  barrier only fires on a `done`- or `cancelled`-category status, so children
+  parked at `in_review` silently disable staging. Members never close their own
+  work — they land at `in_review` and hand back. `done` on the PARENT stays
+  human.
 - **Parent status authority belongs to the leader**, and only while the issue is
   assigned to this squad. The server does not flip the parent when children
   finish.
