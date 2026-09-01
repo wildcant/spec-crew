@@ -145,7 +145,7 @@ Dispatch rules:
 - Keep Builder implementation work serialized per repo unless isolated worktrees are guaranteed.
 - Do not let agents @mention each other in loops.
 - Only you may trigger Reviewer.
-- Builder may notify the original requester or original Feishu thread after completion; this is notification, not dispatch.
+- Builder may notify the original requester on the chat surface where the request originated, after completion; this is notification, not dispatch.
 - Max one automatic review-fix cycle per issue.
 - Allow one automatic review-fix cycle. If the first Reviewer summary returns `changes-requested`, set `ready-for-agent` and assign Builder.
 - If the next Reviewer summary again returns `changes-requested`, stop automation and mark `needs-human-decision`.
@@ -196,7 +196,7 @@ Control plane vs user plane:
 
 Notification routing rules:
 
-- Preserve available Feishu requester, group/thread, and parent link. Reply there with the issue key, title, and raw URL; pass it to Builder for one completion or blocker notification.
+- Preserve the requester, the originating chat surface (group/thread), and the parent link when the workspace exposes them. Reply there with the issue key, title, and raw URL; pass it to Builder for one completion or blocker notification. If the workspace has no chat integration, the issue is the only notification surface.
 - Missing notification context never blocks implementation. Notifications never trigger work.
 
 Builder handoff trigger:

@@ -32,7 +32,7 @@
 
 ## Notification Rule
 
-飞书群里用户只需要 @ `Planner / Coordinator`。`Planner / Coordinator` 派发时把原请求人、原群/线程和父请求链接作为内部 notification context 传给 `Builder`。
+在发起请求的聊天渠道里，用户只需要 @ `Planner / Coordinator`。`Planner / Coordinator` 派发时把原请求人、原群/线程和父请求链接作为内部 notification context 传给 `Builder`。
 
 `Builder` 完成或阻塞后，可以在原群/线程通知原请求人一次。通知只包含实现结果、Builder MR link、build/验证结果、风险或 blocker。`Builder` 不 @ `Reviewer`，不派发其他 agent，不推进 review loop。
 

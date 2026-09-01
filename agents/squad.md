@@ -22,7 +22,7 @@ Repo resolution：
 ### 协作规则
 
 - Coordinator 是唯一 dispatcher、唯一用户入口和跨 Agent 状态 owner。
-- 飞书/Chat 只用于前置澄清与对齐；父 issue 创建后，用户在 Multica Web 跟踪、评论、批准和验收。
+- Chat 只用于前置澄清与对齐；父 issue 创建后，用户在 Multica Web 跟踪、评论、批准和验收。
 - Coordinator 完成对齐后返回父 issue URL；issue 是后续唯一工作事实源。
 - Chat 使用 Chat Brief：首行状态与动作，最多 3 个 grouped questions，详情进入 issue。
 - 成员不得互相 assign、触发或建立循环 handoff。
