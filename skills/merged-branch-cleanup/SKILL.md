@@ -1,75 +1,75 @@
 ---
 name: merged-branch-cleanup
-description: 扫描已合并入 main 的可疑无用分支，按仓库分组输出活跃度分层和 Checklist，辅助人工决策是否删除。删除操作必须经人工逐条确认后方可执行。
+description: Scan for stale branches already merged into main, grouped by repository with an activity tier and a checklist, to support a human decision on deletion. Deletion runs only after per-branch human confirmation.
 ---
 
 ## Check List
 
-1. 列出目标仓库所有已合并入 `main`（或 `master`）的远程分支
-2. 仅保留工作分支（`feature/*`, `feat/*`, `fix/*`, `bugfix/*`, `temp/*`, `chore/*`, `refactor/*`, `experiment/*` 等短生命周期前缀，或无前缀的非主干分支）作为候选。长期分支（主干、环境、版本线，如 `main`, `master`, `develop`, `release/*`, `hotfix/*` 等）按语义排除，不硬编码白名单——判断依据是分支在团队工作流中属于持久分支还是一次性工作分支
-3. 对每个候选分支收集：
-   - 最后 commit 时间、作者、commit message 摘要
-   - 合并入 main 的时间（通过 PR 记录或 merge commit）
-   - 活跃度分层：
-     - 🟢 7 天内有改动（不标记为可疑，仅展示）
-     - 🟡 8–30 天内有改动
-     - 🔴 超过 30 天无改动
-4. 阈值过滤：最后 commit ≤ 14 天 → 展示但不列入"建议删除"
-5. 按仓库分组，每分支展示：分支名、最后 commit 时间、作者、活跃度标记、建议
+1. List every remote branch already merged into `main` (or `master`) in the target repository.
+2. Keep only work branches as candidates — short-lived prefixes such as `feature/*`, `feat/*`, `fix/*`, `bugfix/*`, `temp/*`, `chore/*`, `refactor/*`, `experiment/*`, or unprefixed non-trunk branches. Exclude long-lived branches (trunk, environment, and release lines such as `main`, `master`, `develop`, `release/*`, `hotfix/*`) semantically rather than by a hardcoded allowlist — the test is whether the branch is a persistent branch or a one-off work branch in this team's workflow.
+3. For each candidate branch, collect:
+   - Last commit date, author, and commit message summary
+   - When it was merged into main (from the PR record or the merge commit)
+   - Activity tier:
+     - 🟢 changed within 7 days (shown, not flagged as stale)
+     - 🟡 changed 8–30 days ago
+     - 🔴 no change for over 30 days
+4. Threshold filter: last commit ≤ 14 days → show it, but keep it out of "suggest deleting".
+5. Group by repository. For each branch show: branch name, last commit date, author, activity tier, recommendation.
 
 ## Thresholds
 
-- 可疑无用：已合并入 main + 最后 commit > 14 天
-- 活跃度分层：7 天 / 30 天
-- 排除范围：长期分支（主干/环境/版本线）按语义识别排除，仅工作分支进入候选
+- Stale: merged into main + last commit > 14 days ago
+- Activity tiers: 7 days / 30 days
+- Excluded: long-lived branches (trunk / environment / release lines), identified semantically. Only work branches become candidates.
 
 ## Report Format
 
-每仓库一个区块：
+One block per repository:
 
 ```
-### <仓库名>
+### <repository>
 
-| 分支名 | 最后 commit | 作者 | 活跃度 | 建议 |
-|--------|------------|------|--------|------|
-| feat/xxx | 2026-06-01 | zackshi | 🔴 >30天 | 可删除 |
-| feat/yyy | 2026-06-20 | alice   | 🟡 >14天 | 可删除 |
+| Branch   | Last commit | Author  | Activity  | Recommendation |
+|----------|-------------|---------|-----------|----------------|
+| feat/xxx | 2026-06-01  | alice   | 🔴 >30d   | safe to delete |
+| feat/yyy | 2026-06-20  | bob     | 🟡 >14d   | safe to delete |
 
-待确认删除 Checklist：
+Deletion checklist, pending confirmation:
 - [ ] `feat/xxx`
 - [ ] `feat/yyy`
 ```
 
-汇总行：
+Summary lines:
 
-- 总计可疑分支 N 条，涉及 M 个仓库
-- 长期分支已排除 K 条
-- **删除操作须人工逐条回复 `确认通过` 后方可执行**
+- N stale branches across M repositories
+- K long-lived branches excluded
+- **Deletion runs only after a human confirms each branch explicitly**
 
 ## Safety Rules
 
-- Phase 1 为只读巡检 + 建议输出
-- 删除分支 = 危险操作，必须独立获得人工 `确认通过` 后方可进入 Phase 2
-- 长期分支永远不进入删除候选列表，即使用户在确认列表中写了也不执行
-- 执行任何删除前，重新校验分支当前状态（防止期间已被他人处理）
-- 如分支状态在提案后发生变化，停止并重新确认
-- 只删当次确认中明确列出的分支，不跨 issue 复用确认
+- Phase 1 is a read-only scan plus recommendations.
+- Deleting a branch is a dangerous action. It requires its own explicit human confirmation before Phase 2 begins.
+- Long-lived branches never enter the deletion candidate list, and are never deleted even if a user writes one into the confirmation list.
+- Re-verify each branch's current state immediately before deleting it, in case someone else already handled it.
+- If a branch's state changed after the proposal, stop and re-confirm.
+- Delete only the branches named in this run's confirmation. Never reuse a confirmation across issues.
 
-## Phase 2 — 执行删除
+## Phase 2 — Execute the deletion
 
-**触发条件**：用户在 issue 中回复明确确认内容（`确认通过`、`请删除`、`approved`），并附上具体分支名，或引用 Checklist 中已勾选的分支。
+**Trigger**: the user replies on the issue with an explicit confirmation (`approved`, `please delete`, `go ahead`) naming specific branches, or referencing branches ticked in the checklist.
 
-**执行步骤**（按顺序，每仓库独立执行）：
+**Steps**, in order, run independently per repository:
 
-1. `git fetch --prune origin`（重新拉取最新远端状态）
-2. 对每条待删分支，逐一校验：
-   - 分支仍存在于远端
-   - 分支 tip 仍可从 `origin/main` 到达（`git merge-base --is-ancestor`）
-   - 分支不属于长期分支（主干/环境/版本线）
-   - 分支无开放 PR
-3. 校验通过 → 执行 `git push origin --delete <branch>`，记录结果
-4. 校验未通过 → 跳过并说明具体原因，不执行删除
-5. 所有分支处理完后输出汇总：
-   - ✅ 已删除 N 条（列出分支名）
-   - ⏭️ 跳过 M 条（列出分支名 + 原因）
-6. 执行过程中遇到任何异常，立即停止剩余删除并上报错误
+1. `git fetch --prune origin` to refresh remote state.
+2. For each branch queued for deletion, verify:
+   - The branch still exists on the remote
+   - Its tip is still reachable from `origin/main` (`git merge-base --is-ancestor`)
+   - It is not a long-lived branch (trunk / environment / release line)
+   - It has no open PR
+3. Checks pass → run `git push origin --delete <branch>` and record the result.
+4. Checks fail → skip it, state the specific reason, and do not delete.
+5. After every branch is handled, print a summary:
+   - ✅ deleted N (list the branch names)
+   - ⏭️ skipped M (list the branch names and reasons)
+6. On any error during execution, stop the remaining deletions immediately and report it.

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-需求澄清、PRD、issue 拆解、triage、派发。它是唯一 dispatcher。
+Requirement clarification, PRD, issue slicing, triage, dispatch. The only dispatcher.
 
 ## Multica Settings
 
@@ -22,7 +22,7 @@
 
 ## Workspace Skills
 
-- `branch-pr-safety`（路径 `skills/branch-pr-safety`，非 matt-skills）
+- `branch-pr-safety` (path `skills/branch-pr-safety`, not `matt-skills/`)
 
 ## Instructions
 
@@ -99,11 +99,11 @@ Authority:
 
 Communication:
 
-- Use terse simplified Chinese.
+- Use terse English.
 - No filler, pleasantries, hedging, repetition.
 - Pattern: [thing] [action] [reason]. [next step].
 - Keep code symbols, API names, errors, commands exact.
-- Use normal clear Chinese for security warnings, destructive actions, and order-sensitive steps.
+- Use normal, clear prose for security warnings, destructive actions, and order-sensitive steps.
 
 Clarification budget:
 
@@ -176,27 +176,27 @@ Issue assignment:
 Before creating any PRD-created child issue, set the issue title exactly with one of these formats:
 
 ```text
-【仓库】【版本】摘要
-【仓库】摘要
+[<repo>][<version>] <summary>
+[<repo>] <summary>
 ```
 
-Use `【仓库】【版本】摘要` when version is known.
-Use `【仓库】摘要` when version is unknown.
+Use `[<repo>][<version>] <summary>` when the version is known.
+Use `[<repo>] <summary>` when it is not.
 
 Examples:
 
 ```text
-【<repo-key>】【v2.42】本月筛选条件
-【<repo-key>】URL query 深链定位
+[web][v2.42] filter recruitment data by current month
+[web] deep-link the chat growth page from a URL query
 ```
 
 Rules:
 
-- `版本`: infer from the request or release context. Omit only if truly unavailable.
-- `仓库`: use one repo key from the squad workspace policy repo table.
-- `摘要`: short Chinese summary of user-visible behavior.
-- Do not add a separate module bracket. Include module words in `摘要` only when they help disambiguate.
-- Do not create child issues with legacy titles like `实现：...`.
+- `<version>`: infer from the request or release context. Omit only if truly unavailable.
+- `<repo>`: use one repo key from the squad workspace policy repo table.
+- `<summary>`: short summary of the user-visible behavior.
+- Do not add a separate module bracket. Include module words in `<summary>` only when they help disambiguate.
+- Do not create child issues with legacy titles like `Implement: ...`.
 - If the title does not match the format above, fix the title before creating or dispatching the issue.
 - Keep titles compact. Put details in the issue body, not the title.
 

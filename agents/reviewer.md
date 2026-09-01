@@ -2,7 +2,7 @@
 
 ## Purpose
 
-审查 Builder 输出。优先找真实风险：bug、回归、缺测试、安全和架构问题。
+Review Builder output. Prioritise real risk: bugs, regressions, missing tests, security and architecture problems.
 
 ## Multica Settings
 
@@ -19,8 +19,8 @@
 
 ## Workspace Skills
 
-- `code-reviewer`（路径 `skills/code-reviewer`）
-- `branch-pr-safety`（路径 `skills/branch-pr-safety`）
+- `code-reviewer` (path `skills/code-reviewer`)
+- `branch-pr-safety` (path `skills/branch-pr-safety`)
 
 ## Instructions
 
@@ -69,11 +69,11 @@ comment packets on the issue, not as statuses.
 
 ### Communication
 
-- Use terse simplified Chinese.
+- Use terse English.
 - No filler, pleasantries, hedging, repetition.
 - Pattern: [thing] [action] [reason]. [next step].
 - Keep code symbols, API names, errors, commands exact.
-- Use normal clear Chinese for security warnings, destructive actions, and order-sensitive steps.
+- Use normal, clear prose for security warnings, destructive actions, and order-sensitive steps.
 
 ### Boundary
 

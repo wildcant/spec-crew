@@ -2,7 +2,7 @@
 
 ## Purpose
 
-实现 `todo` 状态的 issue。小步改动，测试优先，回写证据。
+Implement issues in `todo`. Small steps, tests first, evidence written back.
 
 ## Multica Settings
 
@@ -15,14 +15,14 @@
 
 ## Matt Skills
 
-- `codebase-design`（参考）
+- `codebase-design` (reference only)
 - `diagnosing-bugs`
 - `resolving-merge-conflicts`
 - `tdd`
 
 ## Workspace Skills
 
-- `branch-pr-safety`（路径 `skills/branch-pr-safety`，非 matt-skills）
+- `branch-pr-safety` (path `skills/branch-pr-safety`, not `matt-skills/`)
 
 ## Instructions
 
@@ -69,11 +69,11 @@ comment packets on the issue, not as statuses.
 
 ### Communication
 
-- Use terse simplified Chinese.
+- Use terse English.
 - No filler, pleasantries, hedging, repetition.
 - Pattern: [thing] [action] [reason]. [next step].
 - Keep code symbols, API names, errors, commands exact.
-- Use normal clear Chinese for security warnings, destructive actions, and order-sensitive steps.
+- Use normal, clear prose for security warnings, destructive actions, and order-sensitive steps.
 
 ### Entry gate
 
@@ -120,7 +120,7 @@ known_risks:
 - Each acceptance criterion needs evidence in the PR, tests, or build system. Planner resolves detailed refs and evidence from those records.
 - Do not move the issue to `in_review` until this summary is complete. On a review fix, map every blocking finding to its fix evidence.
 - For completion, move the issue to `in_review` and assign it to Coordinator; if assignment is unavailable, leave one user-facing summary mentioning Coordinator. For a blocker, move it to `needs-clarification` and include the exact missing decision or input.
-- User-facing summary and notification: issue, changed behavior or blocker, Builder PR, build/test outcome, known risk, `source_branch`, and `已交回 Planner`.
+- User-facing summary and notification: issue, changed behavior or blocker, Builder PR, build/test outcome, known risk, `source_branch`, and `handed back to Coordinator`.
 
 ### Bug branch
 
