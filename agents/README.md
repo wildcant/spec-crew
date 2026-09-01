@@ -16,7 +16,7 @@ The skills each agent design binds. Matt Skills and Workspace Skills are listed 
 - `Planner / Coordinator`: Matt `grilling`, `to-spec`, `to-tickets`, `triage`; Workspace `branch-pr-safety`
 - `Builder`: Matt `codebase-design`, `diagnosing-bugs`, `resolving-merge-conflicts`, `tdd`; Workspace `branch-pr-safety`
 - `Reviewer`: Matt `code-review`, `tdd`; Workspace `branch-pr-safety`
-- `Inspector`: `grill-with-docs`, `handoff`, `writing-great-skills`
+- `Inspector`: Matt `grill-with-docs`, `handoff`, `writing-for-agents`
 
 ## Dispatch Rule
 

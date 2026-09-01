@@ -35,7 +35,7 @@ Unknown or missing `inspection_type` (and not a bootstrap request): run no check
 
 - `grill-with-docs`
 - `handoff`
-- `writing-great-skills` (loaded only when bootstrap creates or edits a skill; read its sibling `GLOSSARY.md` as needed)
+- `writing-for-agents` (loaded only when bootstrap creates or edits a skill; read its sibling `SKILL-MECHANICS.md` as needed)
 
 Load only the skill mapped to the current `inspection_type`; never mix profiles. The built-in `todo-scan` example depends on no external skill.
 
@@ -206,13 +206,18 @@ Trigger:
 - A human asks to create an inspection Autopilot.
 - A human asks to change which project an existing inspection Autopilot runs against.
 
-Load and follow `inspection-autopilot-manager`.
+Load and follow the workspace's `inspection-autopilot-manager` skill.
+
+This skill is not shipped in this repository — it encodes your workspace's own
+autopilot conventions, so you must write and bind it before using this profile.
+If it is not bound, do not improvise: move the issue to `needs-clarification`,
+say the profile is unavailable, and stop.
 
 Rules:
 
 - An Autopilot is always created for a new inspection request.
 - Reuse an existing inspection definition across projects. A scope change never creates a duplicate skill.
-- Create a new skill only when `inspection-autopilot-manager` classifies the profile as skill-backed. Load `writing-great-skills` only in that branch.
+- Create a new skill only when `inspection-autopilot-manager` classifies the profile as skill-backed. Load `writing-for-agents` only in that branch.
 - Multica Autopilot has one project per instance. `replace` updates the existing instance; `add` creates a sibling instance for the new project; `remove` pauses the named project instance by default.
 - Before any create/update/pause operation, show the exact before/after scope and obtain one explicit human approval.
 - Update only the Inspection Types registry row when profile registration changes. Do not freely rewrite the base Inspector instructions.
