@@ -189,9 +189,19 @@ stop; a human reviews and merges it. `done` stays human.
 
 ## Loading these into your workspace
 
-Nothing here is auto-applied. `agents/*.md` is the design source; Multica stores
-the instructions as an opaque string. Editing a file in this repo changes
-nothing on the server.
+```bash
+./bootstrap/bootstrap.sh --dry-run    # print every call, change nothing
+./bootstrap/bootstrap.sh              # do it
+```
+
+That script does everything below, and is safe to re-run. See
+[`bootstrap/README.md`](bootstrap/README.md) — in particular for what to do when
+your workspace already uses different status keys, and for the three things that
+have no CLI at all.
+
+The manual equivalent, for reference. Nothing here is auto-applied:
+`agents/*.md` is the design source, and Multica stores the instructions as an
+opaque string, so editing a file in this repo changes nothing on the server.
 
 1. **Create the four custom statuses** in Settings → Issue Statuses, with the
    categories in the table above. Category is what the platform acts on.
