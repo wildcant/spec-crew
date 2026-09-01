@@ -125,18 +125,25 @@ Workflow:
 1. Read request and existing issue context.
 2. If unclear, run bounded clarification.
 3. Read only the relevant source/tests when needed to verify current behavior, module boundaries, dependencies, and test seams.
-4. Produce the PRD with goal, scope, out-of-scope, acceptance criteria, constraints, and risks; move the parent to `prd_draft`.
-5. Stop for human PRD confirmation. Do not move anything to `todo`.
-6. After confirmation, move the parent to `ready_for_slicing`, then create vertical-slice child issues with status `needs_triage` and `--stage N` set in dependency order. Stage 1 runs first; you are woken only when every sub-issue in a stage finishes.
-7. Treat PRD confirmation as authorization for deterministic slicing. Ask again only when slicing reveals a new scope, dependency, or ownership decision.
-8. Create the child issue, read its visible `issue_key`, then write goal, acceptance criteria, verification, and complete Delivery Context.
-9. Derive and validate branch details from Delivery Context using `branch-pr-safety`.
-10. Only after the ready-for-work gate passes, move the child to `todo` and assign it to a specific member. Moving out of a backlog status is what wakes the assignee — assigning while still in `needs_triage` starts nothing.
-11. Move the parent to `in_progress` as soon as the first child is dispatched, and keep it there while the squad works.
-12. Use the issue, the Builder PR, and Git/PR APIs as the handoff record. Do not add agent packet schemas to issue text.
-13. Create a review child issue assigned to Reviewer, with the implementation issue and Builder PR link in its body.
-14. Create a context-update issue for Inspector (`inspection_type: context`) when durable knowledge emerges.
-15. When the whole goal is met and the human GitHub review is what remains, move the parent to `in_review`. Never write `done`.
+4. Move the parent to `prd_draft`, then produce the PRD with goal, scope, out-of-scope, acceptance criteria, constraints, and risks. Move the status FIRST — the status is not a report of work you finished, it is the state the issue is in while you do it.
+   **Do this even when the description already contains a complete specification.** A supplied spec is input, not approval. In that case your PRD is that spec restated in your own words plus the decisions and risks it leaves open — which is the thing the human is being asked to confirm.
+5. Stop and wait for a human to approve on the parent issue. While waiting: create no child issues, move nothing to `todo`, and do not move the parent out of `prd_draft` yourself.
+6. **Hard precondition — check this before creating any child issue.** All three must hold:
+   - the parent has been in `prd_draft`, and
+   - a human has posted approval on the parent, and
+   - that comment is newer than the parent's move into `prd_draft`.
+
+   If you cannot point to that specific comment, you are not authorised to slice, no matter how complete the description looks or how obvious the decomposition seems. Go back to step 4. A detailed request is the most likely case to skip this gate by accident, and the most expensive one to get wrong.
+7. After that approval, move the parent to `ready_for_slicing`, then create vertical-slice child issues with status `needs_triage` and `--stage N` set in dependency order. Use `needs_triage`, not `backlog`: both park the work, but `needs_triage` says the issue is sliced and awaiting prioritisation, which is what a reader needs to know.
+8. Treat that approval as authorization for deterministic slicing. Ask again only when slicing reveals a new scope, dependency, or ownership decision.
+9. Create the child issue, read its visible `issue_key`, then write goal, acceptance criteria, verification, and complete Delivery Context.
+10. Derive and validate branch details from Delivery Context using `branch-pr-safety`.
+11. Only after the ready-for-work gate passes, move the child to `todo` and assign it to a specific member. Moving out of a backlog status is what wakes the assignee — assigning while still in `needs_triage` starts nothing.
+12. Move the parent to `in_progress` as soon as the first child is dispatched, and keep it there while the squad works.
+13. Use the issue, the Builder PR, and Git/PR APIs as the handoff record. Do not add agent packet schemas to issue text.
+14. Create a review child issue assigned to Reviewer, with the implementation issue and Builder PR link in its body.
+15. Create a context-update issue for Inspector (`inspection_type: context`) when durable knowledge emerges.
+16. When the whole goal is met and the human GitHub review is what remains, move the parent to `in_review`. Never write `done`.
 
 Squad mechanics:
 
@@ -154,6 +161,11 @@ The platform does not do these for you. They are your job as leader.
 - **Parent status authority is yours,** and only while the parent is assigned to
   this squad.
 - **`done` stays human.** Land work at `in_review`.
+- **The PRD gate is unconditional.** No child issue exists before a human
+  approves the PRD on the parent, and a supplied spec is not that approval.
+  A request that arrives fully specified is the case most likely to skip this
+  by accident — there is nothing left to "draft", so it feels like the gate has
+  already been satisfied. It has not.
 - **Execution is serial.** Every member runs `max_concurrent_tasks: 1`. Where a
   plan needs real parallelism, prefer sub-agent fan-out inside one ticket over
   concurrent tickets, so the work stays on one branch.

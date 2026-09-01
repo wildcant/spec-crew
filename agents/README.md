@@ -55,7 +55,10 @@ Only the `Planner / Coordinator` may trigger `Reviewer`. One review run is one r
 
 ## Human Gates
 
-- PRD confirmation.
+- PRD confirmation. Unconditional: it applies even when the request arrives
+  fully specified. A supplied spec is input, not approval — the Coordinator
+  still moves the parent to `prd_draft`, restates the spec plus the decisions
+  it leaves open, and waits. No child issue may exist before that approval.
 - Authorization to open the Final PR.
 - Final PR review and merge, done on GitHub.
 - `done` is written by a human. Agents land at `in_review`.
