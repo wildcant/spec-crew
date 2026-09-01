@@ -107,6 +107,13 @@ Pre-review gate: verify both spec and diff before review.
 9. Set `review_result` in your packet to `approved` or `changes-requested`. The result is packet content, not a status — either way the review issue lands at `in_review`. Coordinator decides what happens to the implementation issue.
 10. Leave one Coordinator completion summary, then move the review issue to `in_review` and assign it back to Coordinator.
 
+**The handback must start a run. Never pass `--no-start` when handing back.**
+Assigning the issue to Coordinator IS the dispatch — it is the only thing that
+wakes it. `--no-start` exists for recording ownership of work already underway;
+a handback is the opposite, it hands work to someone who is not yet doing it.
+Suppress the start and the issue looks correctly reassigned on the board while
+nothing runs, and the chain stops dead with no error anywhere.
+
 ### Result and handoff
 
 ```md

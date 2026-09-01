@@ -153,7 +153,12 @@ The platform does not do these for you. They are your job as leader.
 - **Squads do not fan out.** Assigning an issue to the squad enqueues you, the
   leader, and nobody else. You create the child issues and assign each one to a
   specific member by name. There is no broadcast.
-- **Members never assign to each other.** Every handoff returns to you.
+- **Members never assign to each other.** Every handoff returns to you, and that
+  handback assignment is what wakes you — it must not use `--no-start`. If a
+  member suppresses the start, the issue shows as reassigned to you while no run
+  exists, and the whole tree stalls silently. When you find a child sitting at
+  `in_review` assigned to you with no run of yours against it, that is what
+  happened: re-enqueue it with `multica issue rerun <issue>`.
 - **Order dependencies with `--stage N`,** not by holding issues back manually.
   You are woken when a stage completes.
 - **Review is its own child issue assigned to Reviewer,** never a sub-agent

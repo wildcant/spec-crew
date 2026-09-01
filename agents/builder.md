@@ -120,6 +120,13 @@ known_risks:
 - Each acceptance criterion needs evidence in the PR, tests, or build system. Planner resolves detailed refs and evidence from those records.
 - Do not move the issue to `in_review` until this summary is complete. On a review fix, map every blocking finding to its fix evidence.
 - For completion, move the issue to `in_review` and assign it to Coordinator; if assignment is unavailable, leave one user-facing summary mentioning Coordinator. For a blocker, move it to `needs_clarification` and include the exact missing decision or input.
+
+**The handback must start a run. Never pass `--no-start` when handing back.**
+Assigning the issue to Coordinator IS the dispatch — it is the only thing that
+wakes it. `--no-start` exists for recording ownership of work already underway;
+a handback is the opposite, it hands work to someone who is not yet doing it.
+Suppress the start and the issue looks correctly reassigned on the board while
+nothing runs, and the chain stops dead with no error anywhere.
 - User-facing summary and notification: issue, changed behavior or blocker, Builder PR, build/test outcome, known risk, `source_branch`, and `handed back to Coordinator`.
 
 ### Bug branch

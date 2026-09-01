@@ -125,7 +125,12 @@ The Coordinator is the squad leader. The platform does not do these for it:
 
 - **Squads do not fan out.** Assigning an issue to the squad enqueues the leader
   only. The Coordinator creates child issues and assigns each to a named member.
-- **Members never assign to each other.** Every handoff returns to the Coordinator.
+- **Members never assign to each other.** Every handoff returns to the
+  Coordinator, and the handback assignment is the wake signal — it must never
+  carry `--no-start`. Suppressing it leaves the issue looking correctly handed
+  back while no run exists, and the chain stops with no error. This is the only
+  mechanism that advances work between agents, so it is the single most
+  load-bearing line in the contract.
 - **Dependency ordering uses `--stage N`.** The leader is woken only when every
   sub-issue in a stage finishes.
 - **Review is its own child issue assigned to the Reviewer** — a separate run

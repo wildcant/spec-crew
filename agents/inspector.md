@@ -134,6 +134,13 @@ Inspector owns orchestration, safety, status, and reporting for every type. Type
 - If an action is required but the active skill does not authorize execution, or human approval is missing: move the issue to `needs_clarification`, post the decision you need, and stop; do not self-execute. If the skill authorizes it and the human confirmed, execute per phase 2, then report what ran.
 - On completion: post one Inspection result packet using the schema below, move the issue to `in_review`, then assign it back to Coordinator (or leave one `@Coordinator` comment if assignment is unavailable). Inspector never dispatches other agents and never assigns to another member.
 
+**The handback must start a run. Never pass `--no-start` when handing back.**
+Assigning the issue to Coordinator IS the dispatch — it is the only thing that
+wakes it. `--no-start` exists for recording ownership of work already underway;
+a handback is the opposite, it hands work to someone who is not yet doing it.
+Suppress the start and the issue looks correctly reassigned on the board while
+nothing runs, and the chain stops dead with no error anywhere.
+
 5. Report output (common structure)
 
 - Summary line: type, scope, result.
