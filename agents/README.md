@@ -13,9 +13,9 @@
 
 以下记录各 agent 设计中绑定的 Skills。Matt Skills 与 Workspace Skills 分开；部署时以 Multica 实际绑定为准：
 
-- `Planner / Coordinator`: Matt `grilling`, `to-spec`, `to-tickets`, `triage`; Workspace `branch-mr-safety`
-- `Builder`: Matt `codebase-design`, `diagnosing-bugs`, `resolving-merge-conflicts`, `tdd`; Workspace `branch-mr-safety`
-- `Reviewer`: Matt `tdd`; Workspace `code-reviewer`, `branch-mr-safety`
+- `Planner / Coordinator`: Matt `grilling`, `to-spec`, `to-tickets`, `triage`; Workspace `branch-pr-safety`
+- `Builder`: Matt `codebase-design`, `diagnosing-bugs`, `resolving-merge-conflicts`, `tdd`; Workspace `branch-pr-safety`
+- `Reviewer`: Matt `tdd`; Workspace `code-reviewer`, `branch-pr-safety`
 - `Inspector`: `grill-with-docs`, `handoff`, `writing-great-skills`
 
 ## Dispatch Rule
@@ -34,11 +34,11 @@
 
 在发起请求的聊天渠道里，用户只需要 @ `Planner / Coordinator`。`Planner / Coordinator` 派发时把原请求人、原群/线程和父请求链接作为内部 notification context 传给 `Builder`。
 
-`Builder` 完成或阻塞后，可以在原群/线程通知原请求人一次。通知只包含实现结果、Builder MR link、build/验证结果、风险或 blocker。`Builder` 不 @ `Reviewer`，不派发其他 agent，不推进 review loop。
+`Builder` 完成或阻塞后，可以在原群/线程通知原请求人一次。通知只包含实现结果、Builder PR link、build/验证结果、风险或 blocker。`Builder` 不 @ `Reviewer`，不派发其他 agent，不推进 review loop。
 
 `Builder` 交回 `Planner / Coordinator` 是状态 handoff，不是派发。优先 assign 当前 issue 回 `Planner / Coordinator`；如果 Multica 不支持 assign，就在当前 issue 留一条 @Planner 的 ready-for-review/blocker 评论。用户不需要手动说“请 review”。
 
-`Reviewer` 不 reassign issue。完成后留一条面向用户的 @Coordinator review summary。`Planner / Coordinator` 负责 review-fix、Builder MR merge、用户验收和 Final MR。
+`Reviewer` 不 reassign issue。完成后留一条面向用户的 @Coordinator review summary。`Planner / Coordinator` 负责 review-fix、Builder PR merge、用户验收和 Final PR。
 
 `Inspector` 完成后写一个 Inspection result packet，再把当前 inspection issue 交回 `Planner / Coordinator`。实现建议必须新建独立 issue，重新通过 ready-for-agent gate。
 
@@ -56,11 +56,11 @@
 ## Human Gates
 
 - PRD 确认。
-- Final MR 创建授权。
+- Final PR 创建授权。
 - 用户验收确认。
-- Final MR merge 确认。
+- Final PR merge 确认。
 
-Builder MR（`work_branch -> source_branch`）是内部集成步骤：Reviewer 通过后由 `Planner / Coordinator` 在策略允许时合并；策略不允许时进入 `ready-for-builder-mr-merge`，等待人工合并。合并并验证 reviewed head 已进入 `source_branch` 后，先获人类授权创建 Final MR；Final MR 合入目标环境后，才进入用户验收。
+Builder PR（`work_branch -> source_branch`）是内部集成步骤：Reviewer 通过后由 `Planner / Coordinator` 在策略允许时合并；策略不允许时进入 `ready-for-builder-pr-merge`，等待人工合并。合并并验证 reviewed head 已进入 `source_branch` 后，先获人类授权创建 Final PR；Final PR 合入目标环境后，才进入用户验收。
 
 ## Canonical State Flow
 
@@ -73,7 +73,7 @@ needs-clarification
 -> in-progress
 -> ready-for-review
 -> review-approved
--> ready-for-final-mr-approval
+-> ready-for-final-pr-approval
 -> ready-for-human-merge
 -> ready-for-acceptance
 -> done
@@ -83,8 +83,8 @@ Optional policy fallback:
 
 ```text
 review-approved
--> ready-for-builder-mr-merge
--> ready-for-final-mr-approval
+-> ready-for-builder-pr-merge
+-> ready-for-final-pr-approval
 -> ready-for-human-merge
 -> ready-for-acceptance
 ```
@@ -97,17 +97,17 @@ ready-for-review
 -> ready-for-agent
 ```
 
-## Branch And MR Safety
+## Branch And PR Safety
 
-统一使用 [`branch-mr-safety`](../skills/branch-mr-safety/SKILL.md)。分支/MR 是 agent 内部控制面，不是默认用户汇报内容。用户默认只看到实现结果、MR link、验证结果、风险和需要人工决定的 blocker。
+统一使用 [`branch-pr-safety`](../skills/branch-pr-safety/SKILL.md)。分支/PR 是 agent 内部控制面，不是默认用户汇报内容。用户默认只看到实现结果、PR link、验证结果、风险和需要人工决定的 blocker。
 
-`Planner / Coordinator` 在派发前，先读取 child issue 的可见 key，再把目标、验收标准、验证与完整 Delivery Context 写入 child issue：`repo`、`base_branch`、`source_branch`、`source_branch_status`、`issue_key`、`work_branch`、`builder_mr_target`、`final_mr_target`。这是为当前无私有派发载体保留的最小分支安全上下文；公开 issue 不写 agent packet、SHA、commands、raw test output 或 routing 字段。
+`Planner / Coordinator` 在派发前，先读取 child issue 的可见 key，再把目标、验收标准、验证与完整 Delivery Context 写入 child issue：`repo`、`base_branch`、`source_branch`、`source_branch_status`、`issue_key`、`work_branch`、`builder_pr_target`、`final_pr_target`。这是为当前无私有派发载体保留的最小分支安全上下文；公开 issue 不写 agent packet、SHA、commands、raw test output 或 routing 字段。
 
-Builder 完成后只写变更、Builder MR、build/test 结论、风险与 `source_branch`。Planner 从 Git/MR 获取 refs、diff、changed files、检查结果和分支状态。
+Builder 完成后只写变更、Builder PR、build/test 结论、风险与 `source_branch`。Planner 从 Git/PR 获取 refs、diff、changed files、检查结果和分支状态。
 
-Planner 派发 Reviewer 时提供 public issue 与 Builder MR link。Reviewer 从 Git/MR 解析 immutable diff、测试和分支状态。
+Planner 派发 Reviewer 时提供 public issue 与 Builder PR link。Reviewer 从 Git/PR 解析 immutable diff、测试和分支状态。
 
-Reviewer 输出公开 Review summary：result、Builder MR、blocking findings、non-blocking follow-ups、test gaps、residual risks。每个 finding 必须有稳定 id；review refs 与 branch state 留在 Git/MR。
+Reviewer 输出公开 Review summary：result、Builder PR、blocking findings、non-blocking follow-ups、test gaps、residual risks。每个 finding 必须有稳定 id；review refs 与 branch state 留在 Git/PR。
 
 Inspector 输出 Inspection result packet：type、scope、result、action required、human approval、approved scope、findings、evidence、actions、follow-up refs、remaining decisions。
 
@@ -119,7 +119,7 @@ Inspector 输出 Inspection result packet：type、scope、result、action requi
 
 ## Build Check
 
-UI 变更由 `Builder` 在标 `ready-for-review` 前跑通项目 build；build 失败 = 交付未完成。交互/视觉验收在 Final MR 合入后的 test 环境进行。
+UI 变更由 `Builder` 在标 `ready-for-review` 前跑通项目 build；build 失败 = 交付未完成。交互/视觉验收在 Final PR 合入后的 test 环境进行。
 
 测试有既有 seam 时，Builder 补焦点覆盖，Reviewer 按缺测审查；没有可行 seam 时，Planner 在 issue 记录证据与 fallback 验证，Builder 不新建测试框架，Reviewer 把 test gap 作为风险而非自动 blocking。
 
@@ -137,11 +137,11 @@ Communication:
 
 ## Skill Precedence
 
-Agent instructions and issue/MR context override loaded Skill workflows。Skill 只提供方法和模板，不扩大 Agent 权限，不跳过人工闸门，不改变 dispatcher ownership。
+Agent instructions and issue/PR context override loaded Skill workflows。Skill 只提供方法和模板，不扩大 Agent 权限，不跳过人工闸门，不改变 dispatcher ownership。
 
 - Coordinator 可使用 `to-spec` / `to-tickets` / `triage` 做范围内只读源码探索；禁止 checkout、编辑、安装依赖、运行项目代码/构建/测试、自动 `ready-for-agent`、自动 `/implement`。
-- Builder 把 issue 中的验证路径视为已确认；Skill 不得自行触发 review 或 Final MR。
-- Reviewer 固定审查 Builder MR 解析出的 immutable commit refs；Skill 不得询问用户修哪些项、实施修复或直接触发 Builder。
+- Builder 把 issue 中的验证路径视为已确认；Skill 不得自行触发 review 或 Final PR。
+- Reviewer 固定审查 Builder PR 解析出的 immutable commit refs；Skill 不得询问用户修哪些项、实施修复或直接触发 Builder。
 - Inspector 只执行当前 `inspection_type` 明确授权的动作。
 
 ## Deployment Sync Rule
@@ -151,6 +151,6 @@ Agent instructions and issue/MR context override loaded Skill workflows。Skill 
 1. 同步对应 Agent instructions 到 Multica。
 2. 在 Multica Agent description 记录同一 `Instruction version`。
 3. 核对 Agent name、bound Skills、max concurrency、instructions version。
-4. 用一个无副作用 smoke issue 验证状态转换、MR 证据读取和交接。
+4. 用一个无副作用 smoke issue 验证状态转换、PR 证据读取和交接。
 
 当前版本：Coordinator `2026-08-13.13`；Builder `2026-08-13.9`；Reviewer `2026-08-13.9`；Inspector `2026-07-27.1`。后续 repo 文件更新仍不代表 server 已自动同步。

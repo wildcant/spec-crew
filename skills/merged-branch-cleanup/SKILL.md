@@ -9,7 +9,7 @@ description: 扫描已合并入 main 的可疑无用分支，按仓库分组输�
 2. 仅保留工作分支（`feature/*`, `feat/*`, `fix/*`, `bugfix/*`, `temp/*`, `chore/*`, `refactor/*`, `experiment/*` 等短生命周期前缀，或无前缀的非主干分支）作为候选。长期分支（主干、环境、版本线，如 `main`, `master`, `develop`, `release/*`, `hotfix/*` 等）按语义排除，不硬编码白名单——判断依据是分支在团队工作流中属于持久分支还是一次性工作分支
 3. 对每个候选分支收集：
    - 最后 commit 时间、作者、commit message 摘要
-   - 合并入 main 的时间（通过 MR 记录或 merge commit）
+   - 合并入 main 的时间（通过 PR 记录或 merge commit）
    - 活跃度分层：
      - 🟢 7 天内有改动（不标记为可疑，仅展示）
      - 🟡 8–30 天内有改动
@@ -66,7 +66,7 @@ description: 扫描已合并入 main 的可疑无用分支，按仓库分组输�
    - 分支仍存在于远端
    - 分支 tip 仍可从 `origin/main` 到达（`git merge-base --is-ancestor`）
    - 分支不属于长期分支（主干/环境/版本线）
-   - 分支无开放 MR/PR
+   - 分支无开放 PR
 3. 校验通过 → 执行 `git push origin --delete <branch>`，记录结果
 4. 校验未通过 → 跳过并说明具体原因，不执行删除
 5. 所有分支处理完后输出汇总：
