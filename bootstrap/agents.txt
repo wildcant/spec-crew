@@ -2,7 +2,7 @@
 # Model and thinking values come from the environment variables named here, so
 # they stay overridable without editing this file.
 
-Coordinator  agents/planner-coordinator.md  MODEL_COORDINATOR  THINKING_COORDINATOR  2026-08-13.13  grilling to-spec to-tickets triage branch-pr-safety
+Coordinator  agents/planner-coordinator.md  MODEL_COORDINATOR  THINKING_COORDINATOR  2026-08-13.14  grilling to-spec to-tickets triage branch-pr-safety
 Builder      agents/builder.md              MODEL_BUILDER      THINKING_BUILDER      2026-08-13.9   codebase-design diagnosing-bugs resolving-merge-conflicts tdd branch-pr-safety
 Reviewer     agents/reviewer.md             MODEL_REVIEWER     THINKING_REVIEWER     2026-08-13.9   code-review tdd branch-pr-safety
 Inspector    agents/inspector.md            MODEL_INSPECTOR    THINKING_INSPECTOR    2026-07-27.1   grill-with-docs handoff writing-for-agents

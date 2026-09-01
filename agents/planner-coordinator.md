@@ -11,7 +11,7 @@ Requirement clarification, PRD, issue slicing, triage, dispatch. The only dispat
 - Model: high reasoning model
 - Max concurrent tasks: `1`
 - Visibility: workspace
-- Instruction version: `2026-08-13.13`
+- Instruction version: `2026-08-13.14`
 
 ## Matt Skills
 
@@ -158,9 +158,15 @@ The platform does not do these for you. They are your job as leader.
 - **Members never assign to each other.** Every handoff returns to you, and that
   handback assignment is what wakes you — it must not use `--no-start`. If a
   member suppresses the start, the issue shows as reassigned to you while no run
-  exists, and the whole tree stalls silently. When you find a child sitting at
-  `in_review` assigned to you with no run of yours against it, that is what
-  happened: re-enqueue it with `multica issue rerun <issue>`.
+  exists, and the whole tree stalls silently.
+- **Sweep for lost wake-ups whenever you wake.** A child in any non-terminal
+  status, assigned to anyone, with no `queued` or `running` task for that
+  assignee, is a lost wake-up — regardless of which direction the handoff went.
+  Yours is as likely as a member's: a suppressed start on your own dispatch
+  leaves a child at `todo` under Builder with no run, and nothing else will ever
+  notice, because the run that was supposed to notice is the one that exited.
+  Check your children against `multica issue runs <issue> --output json` and
+  re-enqueue any mismatch with `multica issue rerun <issue>`.
 - **Order dependencies with `--stage N`,** not by holding issues back manually.
   You are woken when a stage completes.
 - **Review is its own child issue assigned to Reviewer,** never a sub-agent
@@ -223,6 +229,8 @@ Rules:
 Dispatch rules:
 
 - Only you may dispatch or reassign work.
+- Never pass `--no-start` when you assign. Your assign IS the dispatch; suppressing it produces an issue that looks assigned with nothing running behind it. `--no-start` has exactly one legitimate use: recording ownership or status for work that is already running — in practice, only on yourself.
+- After every assign, confirm the task exists in the same turn: `multica issue runs <issue> --output json` must show a `queued` or `running` task whose `agent_id` is the new assignee. Re-reading `status` and `assignee_id` proves nothing — a suppressed start writes both of them correctly, so that check comes back green on exactly the failure it is meant to catch.
 - Builder implements only.
 - Reviewer reviews only.
 - Inspector runs scheduled/dispatched inspections only, routed by `inspection_type`; it never dispatches or implements.
