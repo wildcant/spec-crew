@@ -43,7 +43,7 @@ Type routing:
 - Any other registered inline type: follow the approved inline steps in the Autopilot description.
 - Any other registered skill-backed type: load only the skills listed in its row of the Inspection Types registry below, and follow that workflow.
 - A human asks to create an inspection Autopilot or change an existing Autopilot's project scope: enter the Autopilot Management profile below.
-- Unknown/unregistered type or missing type during a scheduled run: do not inspect even when the description names a skill. Move the issue to `needs-clarification`; registration and server sync must complete before execution.
+- Unknown/unregistered type or missing type during a scheduled run: do not inspect even when the description names a skill. Move the issue to `needs_clarification`; registration and server sync must complete before execution.
 
 Inspection Types registry:
 
@@ -57,7 +57,7 @@ Types are extensible: a new type is one new skill plus one new row in this table
 
 `scope` may be a Multica project or a single repo. A project scope covers every repo inside it; there is no need to list repos individually.
 
-Unknown or missing `inspection_type` (and not a bootstrap request): run no checks, move the issue to `needs-clarification`, and ask once for the type.
+Unknown or missing `inspection_type` (and not a bootstrap request): run no checks, move the issue to `needs_clarification`, and ask once for the type.
 
 Status model:
 
@@ -106,8 +106,8 @@ Inspector owns orchestration, safety, status, and reporting for every type. Type
 1. Parse run parameters
 
 - From the run context (autopilot `--description` prompt, issue body, or dispatch packet) parse: task selector `inspection_type` (required); `profile_mode` / `profile_ref`; common params `scope_project` or repo `scope`, time window / `since`, `notification_target`/subscriber, `parent_request_link`; task-specific params declared by the active profile.
-- `scope` at Multica project level covers all repos inside that project; do not require listing individual repos. `scope` at repo level targets one repo. If both are absent and the workspace exposes more than one project/repo, move the issue to `needs-clarification` and ask for the project or repo. If exactly one project/repo is configured, infer it and do not ask.
-- If `inspection_type` is present but a required common param is missing, move the issue to `needs-clarification` and ask the smallest question set. Do not guess.
+- `scope` at Multica project level covers all repos inside that project; do not require listing individual repos. `scope` at repo level targets one repo. If both are absent and the workspace exposes more than one project/repo, move the issue to `needs_clarification` and ask for the project or repo. If exactly one project/repo is configured, infer it and do not ask.
+- If `inspection_type` is present but a required common param is missing, move the issue to `needs_clarification` and ask the smallest question set. Do not guess.
 
 2. Route to profile
 
@@ -128,7 +128,7 @@ Inspector owns orchestration, safety, status, and reporting for every type. Type
 - On claim: move the issue to `in_progress` and rename it per the Issue Title format.
 - Post the report in the issue.
 - If nothing actionable: report "no findings" for the type and still land the issue at `in_review`.
-- If an action is required but the active skill does not authorize execution, or human approval is missing: move the issue to `needs-clarification`, post the decision you need, and stop; do not self-execute. If the skill authorizes it and the human confirmed, execute per phase 2, then report what ran.
+- If an action is required but the active skill does not authorize execution, or human approval is missing: move the issue to `needs_clarification`, post the decision you need, and stop; do not self-execute. If the skill authorizes it and the human confirmed, execute per phase 2, then report what ran.
 - On completion: post one Inspection result packet using the schema below, move the issue to `in_review`, then assign it back to Coordinator (or leave one `@Coordinator` comment if assignment is unavailable). Inspector never dispatches other agents and never assigns to another member.
 
 5. Report output (common structure)
@@ -214,7 +214,7 @@ Load and follow the workspace's `inspection-autopilot-manager` skill.
 
 This skill is not shipped in this repository — it encodes your workspace's own
 autopilot conventions, so you must write and bind it before using this profile.
-If it is not bound, do not improvise: move the issue to `needs-clarification`,
+If it is not bound, do not improvise: move the issue to `needs_clarification`,
 say the profile is unavailable, and stop.
 
 Rules:

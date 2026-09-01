@@ -51,7 +51,7 @@ Authority boundaries:
 
 ## Review Loop Budget
 
-Only the `Planner / Coordinator` may trigger `Reviewer`. One review run is one review round; the P0/P1/P2 findings inside it are not counted individually. `Builder` may fix findings from the same round in several batches, but hands back to the Coordinator once, after every required finding is done. A follow-up review verifies only whether the previous round's findings were resolved and whether the fix introduced an obvious new P0/P1 regression — it does not re-review the fix as if it were unrelated new work. At most one automatic review-fix cycle per issue; on a second `changes-requested`, stop automating, move the issue to `needs-clarification`, and state the human decision needed.
+Only the `Planner / Coordinator` may trigger `Reviewer`. One review run is one review round; the P0/P1/P2 findings inside it are not counted individually. `Builder` may fix findings from the same round in several batches, but hands back to the Coordinator once, after every required finding is done. A follow-up review verifies only whether the previous round's findings were resolved and whether the fix introduced an obvious new P0/P1 regression — it does not re-review the fix as if it were unrelated new work. At most one automatic review-fix cycle per issue; on a second `changes-requested`, stop automating, move the issue to `needs_clarification`, and state the human decision needed.
 
 ## Human Gates
 
@@ -65,8 +65,8 @@ The Builder PR (`work_branch -> source_branch`) is an internal integration step.
 ## Status Model
 
 Planning state lives in the issue status and nowhere else. Statuses are
-exclusive; labels are a set. An issue that is simultaneously `prd-draft` and
-`needs-triage` is a bug we would otherwise have to prevent, so planning state
+exclusive; labels are a set. An issue that is simultaneously `prd_draft` and
+`needs_triage` is a bug we would otherwise have to prevent, so planning state
 never uses labels.
 
 Issue JSON exposes `status`, `status_category`, and `status_name` separately.
@@ -79,16 +79,22 @@ built-ins:
 
 | Status | Category | Meaning |
 |---|---|---|
-| `needs-clarification` | `blocked` | Coordinator is waiting on a human answer |
+| `needs_clarification` | `blocked` | Coordinator is waiting on a human answer |
 | `blocked` | `blocked` | Waiting on something that is not a question |
-| `prd-draft` | `backlog` | Drafting the spec |
-| `ready-for-slicing` | `backlog` | Spec done, not yet sliced |
-| `needs-triage` | `backlog` | Sliced, not yet prioritised |
+| `prd_draft` | `backlog` | Drafting the spec |
+| `ready_for_slicing` | `backlog` | Spec done, not yet sliced |
+| `needs_triage` | `backlog` | Sliced, not yet prioritised |
 | `todo` | `todo` | Executable — native `todo` *is* `ready-for-agent` |
 | `in_progress` | `in_progress` | Work underway |
 | `in_review` | `in_review` | Delivered, awaiting human acceptance |
 | `done` | `done` | Human only |
 | `cancelled` | `cancelled` | Dropped |
+
+A status **key** is 1-32 characters of lowercase letters, digits, or underscore
+— hyphens are rejected by the server. The keys above are the canonical ones this
+kit expects; if your workspace already uses different keys for the same
+categories, `bootstrap/` rewrites these instructions to match rather than
+requiring you to rename anything.
 
 Why this works: assigning an issue that sits in a backlog-category status does
 not start a run, and moving it out of backlog wakes the assignee. So the parked
@@ -96,8 +102,8 @@ statuses are exactly the planning ones, and reaching `todo` is the moment work
 becomes executable. The platform enforces the pipeline; no agent has to.
 
 ```text
-needs-clarification (blocked, any point)
-prd-draft -> ready-for-slicing -> needs-triage   (backlog: parked)
+needs_clarification (blocked, any point)
+prd_draft -> ready_for_slicing -> needs_triage   (backlog: parked)
 -> todo          (executable; assignment now starts the agent)
 -> in_progress
 -> in_review     (agents stop here)

@@ -96,8 +96,8 @@ comment packets on the issue, not as statuses.
 Pre-review gate: verify both spec and diff before review.
 
 1. Read the public issue, acceptance criteria, Builder PR, changed files, and test outcome from Git/PR APIs.
-2. Spec check: resolve `spec_ref` and read the referenced PRD/spec content (goal, scope, out-of-scope, constraints). The Spec axis reviews against the original requirement, not only the acceptance criteria excerpt. If it fails, set `review_result: needs-info`, move the review issue to `needs-clarification`, leave the one Coordinator handoff comment with the exact missing input, and stop.
-3. Diff check: resolve immutable base/head refs from the Builder PR and verify its diff is non-empty. If it fails, use the same `needs-clarification` handoff.
+2. Spec check: resolve `spec_ref` and read the referenced PRD/spec content (goal, scope, out-of-scope, constraints). The Spec axis reviews against the original requirement, not only the acceptance criteria excerpt. If it fails, set `review_result: needs-info`, move the review issue to `needs_clarification`, leave the one Coordinator handoff comment with the exact missing input, and stop.
+3. Diff check: resolve immutable base/head refs from the Builder PR and verify its diff is non-empty. If it fails, use the same `needs_clarification` handoff.
 4. Inspect that immutable diff and relevant code.
 5. Compare implementation against the spec content and acceptance criteria.
 6. Check the issue's testability classification. With an existing seam, require focused coverage. With `no_viable_test_seam`, verify the stated fallback evidence and report the test gap in `tests_missing` or `residual_risks`; it is blocking only when acceptance criteria still require test coverage or behavior lacks other verification.
