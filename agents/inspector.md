@@ -19,17 +19,7 @@ Supports self-service bootstrap: when a user describes a new inspection need in 
 
 The autopilot or the Coordinator supplies `inspection_type` at trigger time, which decides the profile this run uses.
 
-The table below keeps one minimal built-in example type, `todo-scan` (read-only), to demonstrate the pattern. Other inspection types (including `context`) are not listed here; each is defined by its own skill and registered through Self-Service Bootstrap.
-
-| `inspection_type` | Target                                                 | Skills                    | Write access |
-| ----------------- | ------------------------------------------------------ | ------------------------- | ------------ |
-| `todo-scan`       | Scan `scope` for `TODO`/`FIXME`/`XXX` markers, list them | — (built-in inline, read-only) | Read-only |
-
-Types are extensible: a new type is one new skill plus one new row in this table. See the Autopilot Management profile below.
-
-`scope` may be a Multica project or a single repo. A project scope covers every repo inside it; there is no need to list repos individually.
-
-Unknown or missing `inspection_type` (and not a bootstrap request): run no checks, move the issue to `needs-clarification`, and ask once for the type.
+The registry itself lives inside the `## Instructions` payload below, not here. It has to: `description` never reaches the runtime, only `instructions` does, so a registry kept outside the payload is a table the deployed agent cannot read. Registering a new type means adding a row inside that fence and re-syncing the instructions to Multica.
 
 ## Matt Skills
 
@@ -51,9 +41,23 @@ Type routing:
 - Read `inspection_type` from the run context (autopilot config, issue body, or dispatch packet).
 - `todo-scan`: no external skill; follow the inlined Example profile below.
 - Any other registered inline type: follow the approved inline steps in the Autopilot description.
-- Any other registered skill-backed type: load only the skills listed in its Inspection Types row and follow that workflow.
+- Any other registered skill-backed type: load only the skills listed in its row of the Inspection Types registry below, and follow that workflow.
 - A human asks to create an inspection Autopilot or change an existing Autopilot's project scope: enter the Autopilot Management profile below.
 - Unknown/unregistered type or missing type during a scheduled run: do not inspect even when the description names a skill. Move the issue to `needs-clarification`; registration and server sync must complete before execution.
+
+Inspection Types registry:
+
+The table below keeps one minimal built-in example type, `todo-scan` (read-only), to demonstrate the pattern. Other inspection types (including `context`) are not listed here; each is defined by its own skill and registered through Self-Service Bootstrap.
+
+| `inspection_type` | Target                                                 | Skills                    | Write access |
+| ----------------- | ------------------------------------------------------ | ------------------------- | ------------ |
+| `todo-scan`       | Scan `scope` for `TODO`/`FIXME`/`XXX` markers, list them | — (built-in inline, read-only) | Read-only |
+
+Types are extensible: a new type is one new skill plus one new row in this table. See the Autopilot Management profile below.
+
+`scope` may be a Multica project or a single repo. A project scope covers every repo inside it; there is no need to list repos individually.
+
+Unknown or missing `inspection_type` (and not a bootstrap request): run no checks, move the issue to `needs-clarification`, and ask once for the type.
 
 Status model:
 
@@ -220,7 +224,7 @@ Rules:
 - Create a new skill only when `inspection-autopilot-manager` classifies the profile as skill-backed. Load `writing-for-agents` only in that branch.
 - Multica Autopilot has one project per instance. `replace` updates the existing instance; `add` creates a sibling instance for the new project; `remove` pauses the named project instance by default.
 - Before any create/update/pause operation, show the exact before/after scope and obtain one explicit human approval.
-- Update only the Inspection Types registry row when profile registration changes. Do not freely rewrite the base Inspector instructions.
+- When profile registration changes, update only that type's row in the Inspection Types registry above. Do not freely rewrite the rest of these instructions.
 
 Completion signal:
 
