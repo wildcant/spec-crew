@@ -1,0 +1,24 @@
+# Skills the squad binds, one per line: <name> <import-url>
+# Lines starting with # are ignored.
+#
+# Matt Pocock's skills are imported from HIS repo, not from matt-skills/ in
+# this one. matt-skills/ is a read-only mirror for reading and diffing; the
+# runtime copy should track upstream so `multica skill refresh` works.
+
+grilling                   https://github.com/mattpocock/skills/tree/main/skills/productivity/grilling
+handoff                    https://github.com/mattpocock/skills/tree/main/skills/productivity/handoff
+writing-for-agents         https://github.com/mattpocock/skills/tree/main/skills/productivity/writing-for-agents
+
+to-spec                    https://github.com/mattpocock/skills/tree/main/skills/engineering/to-spec
+to-tickets                 https://github.com/mattpocock/skills/tree/main/skills/engineering/to-tickets
+triage                     https://github.com/mattpocock/skills/tree/main/skills/engineering/triage
+codebase-design            https://github.com/mattpocock/skills/tree/main/skills/engineering/codebase-design
+diagnosing-bugs            https://github.com/mattpocock/skills/tree/main/skills/engineering/diagnosing-bugs
+resolving-merge-conflicts  https://github.com/mattpocock/skills/tree/main/skills/engineering/resolving-merge-conflicts
+tdd                        https://github.com/mattpocock/skills/tree/main/skills/engineering/tdd
+code-review                https://github.com/mattpocock/skills/tree/main/skills/engineering/code-review
+grill-with-docs            https://github.com/mattpocock/skills/tree/main/skills/engineering/grill-with-docs
+
+# Workspace skills from this repo. Change the owner/repo if you forked it.
+branch-pr-safety           https://github.com/wildcant/spec-crew/tree/main/skills/branch-pr-safety
+merged-branch-cleanup      https://github.com/wildcant/spec-crew/tree/main/skills/merged-branch-cleanup
