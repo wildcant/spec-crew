@@ -9,7 +9,7 @@
 ## Multica Settings
 
 - Name: `Inspector`
-- Provider: `Claude Code`, `Cursor Agent`, or lower-cost compatible runtime
+- Runtime: a `Claude Code`, `Cursor Agent`, or lower-cost compatible runtime. Record the actual `runtime_id` you bound.
 - Model: low/mid model
 - Max concurrent tasks: `1`
 - Visibility: workspace

@@ -7,7 +7,7 @@
 ## Multica Settings
 
 - Name: `Coordinator`
-- Provider: `Claude Code` or `Cursor Agent`
+- Runtime: a `Claude Code` or `Cursor Agent` runtime. Record the actual `runtime_id` you bound.
 - Model: high reasoning model
 - Max concurrent tasks: `1`
 - Visibility: workspace
