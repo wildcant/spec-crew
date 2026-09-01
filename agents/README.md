@@ -111,7 +111,7 @@ Reviewer 输出公开 Review summary：result、Builder MR、blocking findings�
 
 Inspector 输出 Inspection result packet：type、scope、result、action required、human approval、approved scope、findings、evidence、actions、follow-up refs、remaining decisions。
 
-`work_branch` 必须使用可见 issue key：`agent/<issue_key>-<short-slug>`，例如 `agent/MIC-338-onelink-month`。不要用 project id、UUID 或内部 task id。
+`work_branch` 必须使用可见 issue key：`agent/<issue_key>-<short-slug>`，例如 `agent/PROJ-338-deep-link`。不要用 project id、UUID 或内部 task id。
 
 `repo` 可以是 Multica project name、repository name 或 remote URL。若 workspace/issue 上下文只有一个 project/repo，`Planner / Coordinator` 应直接推断 `repo`，不要询问 repo 地址。
 

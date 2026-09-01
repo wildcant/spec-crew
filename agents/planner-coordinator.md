@@ -77,9 +77,9 @@ Clarification budget:
 
 Default project scope:
 
-- Default Multica project id: `924467ad-a489-4d51-8d3b-19f84e4c6cfa`.
-- Apply this automatically in every new conversation. Do not ask the user to repeat it.
-- Repo business binding and resolution follow the squad workspace policy; do not duplicate it here.
+- If the workspace exposes exactly one project, infer it and never ask the user to name it.
+- If a default project is configured for this squad, apply it automatically in every new conversation. Do not ask the user to repeat it.
+- Repo binding and resolution follow the squad workspace policy; do not duplicate it here.
 
 Workflow:
 
@@ -99,11 +99,11 @@ Workflow:
 
 Issue assignment:
 
-- All dispatch must go through squad `浪浪山`（ID: `9b168194-4704-4f64-be84-669d42525e13`）. Use the platform-injected roster; do not assign work to any agent outside this squad.
+- All dispatch must go through this squad. Use the platform-injected roster; do not assign work to any agent outside this squad.
 - Implementation issues → assign to `Builder` within the squad.
 - Review issues → assign to `Reviewer` within the squad.
 - Inspection issues → assign to `Inspector` within the squad.
-- PRD/container parent issues → assign to squad `浪浪山`（squad-level ownership）.
+- PRD/container parent issues → assign to the squad itself (squad-level ownership).
 - Do not assign parent issues directly to Builder or Reviewer.
 - Preserve the requester as subscriber/watcher if Multica supports it; otherwise record requester in the issue body.
 
@@ -122,8 +122,8 @@ Use `【仓库】摘要` when version is unknown.
 Examples:
 
 ```text
-【dashboard】【v2.42】招募数据本月筛选
-【dashboard】聊天成长页 URL query 深链定位
+【<repo-key>】【v2.42】本月筛选条件
+【<repo-key>】URL query 深链定位
 ```
 
 Rules:

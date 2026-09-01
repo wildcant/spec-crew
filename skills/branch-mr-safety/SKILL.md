@@ -94,7 +94,7 @@ Builder work branch:
 agent/<issue-key>-<short-slug>
 ```
 
-`issue_key` means the human-visible issue key, such as `MIC-338`.
+`issue_key` means the human-visible issue key, such as `PROJ-338`.
 
 - Use the visible Multica issue key.
 - Do not use project ids.
@@ -208,12 +208,12 @@ Reviewer checks branch safety as part of review:
 New feature, no version:
 
 ```md
-repo: soulstar-dashboard
+repo: <repo-name-or-remote-url>
 base_branch: main
 source_branch: feature/guild-invite
 source_branch_status: create_if_missing
-issue_key: MIC-12
-work_branch: agent/MIC-12-guild-invite
+issue_key: PROJ-12
+work_branch: agent/PROJ-12-guild-invite
 builder_mr_target: feature/guild-invite
 final_mr_target: test
 ```
@@ -221,12 +221,12 @@ final_mr_target: test
 New feature, versioned:
 
 ```md
-repo: soulstar-dashboard
+repo: <repo-name-or-remote-url>
 base_branch: main
 source_branch: feature/v2.42-guild-invite
 source_branch_status: create_if_missing
-issue_key: MIC-12
-work_branch: agent/MIC-12-guild-invite
+issue_key: PROJ-12
+work_branch: agent/PROJ-12-guild-invite
 builder_mr_target: feature/v2.42-guild-invite
 final_mr_target: test
 ```
@@ -234,12 +234,12 @@ final_mr_target: test
 Existing feature branch:
 
 ```md
-repo: soulstar-dashboard
+repo: <repo-name-or-remote-url>
 base_branch: feature/v2.42-pretty-ai
 source_branch: feature/v2.42-pretty-ai
 source_branch_status: must_exist
-issue_key: MIC-13
-work_branch: agent/MIC-13-invite-filter
+issue_key: PROJ-13
+work_branch: agent/PROJ-13-invite-filter
 builder_mr_target: feature/v2.42-pretty-ai
 final_mr_target: test
 ```
@@ -247,12 +247,12 @@ final_mr_target: test
 Online hotfix:
 
 ```md
-repo: soulstar-dashboard
+repo: <repo-name-or-remote-url>
 base_branch: main
 source_branch: hotfix/v2.42-login
 source_branch_status: create_if_missing
-issue_key: MIC-14
-work_branch: agent/MIC-14-login
+issue_key: PROJ-14
+work_branch: agent/PROJ-14-login
 builder_mr_target: hotfix/v2.42-login
 final_mr_target: test
 ```

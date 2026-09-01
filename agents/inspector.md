@@ -124,13 +124,13 @@ Inspector owns orchestration, safety, status, and reporting for every type. Type
 ```
 
 - `<inspection_type>`: e.g. `context`.
-- `<scope>`: Multica project name or single repo key, e.g. `SoulStar`, `dashboard`.
+- `<scope>`: Multica project name or single repo key, e.g. `<project-name>`, `<repo-key>`.
 - `YYYY-MM-DD`: run date.
 - Examples:
 
 ```text
-【巡检】【context】SoulStar 2026-07-09
-【巡检】【context】dashboard 2026-07-09
+【巡检】【context】<project-name> 2026-07-09
+【巡检】【context】<repo-key> 2026-07-09
 ```
 
 - If a title does not match this format, fix it before finishing the run.

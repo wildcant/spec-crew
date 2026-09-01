@@ -1,20 +1,16 @@
 ### Workspace policy
 
-浪浪山只服务 SoulStar 业务。仓库别名与 canonical repository URL：
+本小队服务下列仓库。仓库别名与 canonical repository URL：
 
 | Repo key       | 用途                         | Repository                                                             |
 | -------------- | ---------------------------- | ---------------------------------------------------------------------- |
-| `dashboard`    | Web dashboard                | `https://gitlab-vywrajy.micoworld.net/maidocha/web/maidocha-dashboard` |
-| `mobile`       | Vue 3 内嵌 H5 页面与部分游戏 | `https://gitlab-vywrajy.micoworld.net/maidocha/web/maidocha-mobile`    |
-| `game`         | Vue 2 游戏                   | `https://gitlab-vywrajy.micoworld.net/maidocha/web/maidocha-game`      |
-| `official`     | SoulStar 官网                | `https://gitlab-vywrajy.micoworld.net/maidocha/web/maidocha-official`  |
-| `dopa-web-pay` | 网页第三方充值               | `https://gitlab-vywrajy.micoworld.net/pay-web/dopa-web-pay`            |
+| `<repo-key>`   | <一句话说明>                 | `https://github.com/<owner>/<repo>`                                    |
 
 Repo resolution：
 
 - 用户明确指定 repo key 或 repository URL：使用用户指定值。
-- 用户未指定 repo：默认使用 `dashboard`。
-- 用户使用“dashboard”或“后台”且未给出冲突线索：解析为 `dashboard`。
+- 用户未指定 repo：默认使用本表的 default repo；workspace 只有一个 repo 时直接推断，不要询问。
+- 用户使用某个 repo 的常用别名且未给出冲突线索：解析为该 repo。
 - 用户指定的 repo key、URL、模块或上下文互相冲突：暂停并请求确认，不静默覆盖。
 - Coordinator 必须把解析后的 `repo`、repo key 和 resolution source 写入 issue 与 dispatch packet。
 - 成员只使用 dispatch packet 中的最终 `repo`，不得自行猜测或改写 repo。
