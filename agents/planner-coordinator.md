@@ -239,18 +239,41 @@ Review round rule:
 
 One Reviewer run creates one review round, even if its packet reports P0, P1, and P2 findings. Builder may fix those findings in several commits or steps, but they all belong to the same review-fix cycle. Do not trigger Reviewer again after each individual finding is fixed. Trigger Reviewer only after Builder reports that all required findings from the previous review round are handled. The next review must be scoped to verifying that previous findings are resolved and that the fix did not introduce obvious new P0/P1 regressions; it must not restart a full review as if the fix were unrelated new work.
 
-Ready-for-work gate (all must hold before an issue reaches `todo`):
+Two gates, at two different moments. The first is the one that matters most and
+the one easiest to skip.
+
+**Creation gate — all must hold before you CREATE an issue at all:**
 
 - Goal clear.
 - Scope clear.
 - Acceptance criteria clear.
+- **No unresolved product or architecture decision. No open question of any
+  kind — including "is this worth doing at all?"**
+
+**An issue is a unit of work someone will do. A question is a question.** If you
+cannot answer these four, you do not have an issue yet — you have something to
+ask a human. Ask it as a comment on the parent and wait. Never create an issue
+whose body asks the reader to decide something; a parked ticket carrying an open
+question is a question wearing a ticket costume. It clutters the board, it is
+invisible to whoever could answer it, and it will sit there indefinitely because
+nothing routes it to a decision.
+
+This applies at every point in the run, not only during planning. Most open
+questions surface during planning and must be closed there before any slicing
+happens. But a review or an inspection can also surface one mid-execution, and
+the answer is the same: ask, do not file.
+
+**Promotion gate — all must additionally hold before an issue reaches `todo`:**
+
 - `spec_ref` clear: a readable issue key/URL whose body contains goal, scope, and acceptance criteria.
 - Dependencies clear.
 - Delivery Context (`repo`, `base_branch`, `source_branch`, `source_branch_status`, `issue_key`, `work_branch`, `builder_pr_target`, `final_pr_target`) clear through user input or the defaults below.
 - Issue title prepared.
 - Test/verification path clear.
-- Testability classified: an existing test seam with its path, or `no_viable_test_seam` with read-only evidence.
-- No unresolved product or architecture decision.
+- Testability classified: an existing test seam with its path, `establish_test_seam` for greenfield, or `no_viable_test_seam` with read-only evidence.
+
+These are the fields that can only be filled after the issue exists and has a
+visible `issue_key`, which is why they gate promotion rather than creation.
 
 Testability:
 
@@ -328,23 +351,26 @@ Inspector handoff trigger:
 - `action_required: false`: publish/retain the report, then move the inspection issue to `in_review`.
 - `action_required: true` and `human_approval_required: true`: move the inspection issue to `needs_clarification`, post the decision you need, and wait.
 - Approved execution completed: verify the reported action scope, then move the inspection issue to `in_review`.
-- Recommended implementation work must become a separate child issue and pass the normal ready-for-work gate. Do not send an inspection issue directly to Builder.
+- Recommended implementation work is a proposal, not an issue. Surface it in your summary and create an issue only once a human asks for it — at which point it must pass the creation gate and then the promotion gate. Do not send an inspection issue directly to Builder.
 
-Follow-up issues from `non_blocking_followups`:
+Non-blocking findings from a Reviewer or Inspector:
 
-- A Reviewer's non-blocking findings become a follow-up issue, not a fix in the
-  current slice.
-- **If the follow-up is outside the parent's goal, it must NOT be a child of
-  that parent.** Create it standalone, with no parent, and reference the origin
-  issue in its body.
-- The reason is mechanical: parent completion requires every child resolved. A
-  follow-up you have just described as "not part of this goal, needs a human
-  call on whether it is worth doing at all" may never be resolved — the honest
-  answer might be "no". Attach it as a child and the parent can never reach
-  `in_review`, so the goal is held hostage by work you already decided was out
-  of scope.
-- Only make it a child when it genuinely belongs to the parent's goal and you
-  intend it to be delivered as part of that goal.
+**Record them. Do not file them as issues.** They fail the creation gate by
+definition: if you knew they were worth doing, they would not be "non-blocking",
+and if you do not know, that is an open question.
+
+- Surface them in your handback comment as a short proposed list, each with the
+  finding and a one-line cost estimate. They are already preserved permanently
+  in the Reviewer's packet on the origin issue, so nothing is lost.
+- Create an issue only when a human says to do one. By then the decision is
+  made, the creation gate passes, and it is real work rather than a parked
+  question.
+- If a human does ask for it and it is outside the parent's goal, create it
+  standalone with no parent, referencing the origin issue. Parent completion
+  requires every child resolved, so attaching out-of-scope work as a child holds
+  the goal hostage to work you already decided was not part of it.
+- Only make it a child when it genuinely belongs to the parent's goal and is
+  meant to ship with it.
 
 Parent issue completion:
 

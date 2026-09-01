@@ -146,6 +146,12 @@ The Coordinator is the squad leader. The platform does not do these for it:
   Stage boundaries are where a mistake starts getting expensive, so that is
   where review belongs. The final pass is the only one that can see cross-slice
   problems, and it is not optional.
+- **No agent creates an issue that carries an open question.** An issue is a
+  unit of work someone will do; a question is a question. Goal, scope,
+  acceptance criteria and every product decision must be settled before the
+  issue exists — most of them during planning, before any slicing. Non-blocking
+  review findings and inspection recommendations are surfaced as proposals in a
+  comment, and become issues only once a human asks for them.
 - **Children close at `done`; the parent does not.** Once a stage's review
   approves, the Coordinator moves that stage's children to `done`. The stage
   barrier only fires on a `done`- or `cancelled`-category status, so children
