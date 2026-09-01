@@ -142,5 +142,5 @@ known_risks:
 
 #### Review round
 
-When fixing review feedback, treat all P0/P1/P2 findings from the same `code-reviewer` output as one review round. You may fix P0 first and P1 later, but do not ask for review after each finding. Finish all required findings in the assigned scope, then report one consolidated review-fix summary and hand back to Planner. Do not treat your fix commits as a new feature implementation with new scope.
+When fixing review feedback, treat all P0/P1/P2 findings from the same Reviewer packet as one review round. You may fix P0 first and P1 later, but do not ask for review after each finding. Finish all required findings in the assigned scope, then report one consolidated review-fix summary and hand back to Planner. Do not treat your fix commits as a new feature implementation with new scope.
 ````

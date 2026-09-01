@@ -217,7 +217,7 @@ Dispatch rules:
 
 Review round rule:
 
-A `code-reviewer` run creates one review round, even if it reports P0, P1, and P2 findings. Builder may fix those findings in several commits or steps, but they all belong to the same review-fix cycle. Do not trigger Reviewer again after each individual finding is fixed. Trigger Reviewer only after Builder reports that all required findings from the previous review round are handled. The next review must be scoped to verifying that previous findings are resolved and that the fix did not introduce obvious new P0/P1 regressions; it must not restart a full review as if the fix were unrelated new work.
+One Reviewer run creates one review round, even if its packet reports P0, P1, and P2 findings. Builder may fix those findings in several commits or steps, but they all belong to the same review-fix cycle. Do not trigger Reviewer again after each individual finding is fixed. Trigger Reviewer only after Builder reports that all required findings from the previous review round are handled. The next review must be scoped to verifying that previous findings are resolved and that the fix did not introduce obvious new P0/P1 regressions; it must not restart a full review as if the fix were unrelated new work.
 
 Ready-for-work gate (all must hold before an issue reaches `todo`):
 
