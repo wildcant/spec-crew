@@ -1,156 +1,190 @@
-# Multica Agent Designs
+# Agent Designs
 
-基于当前工作流设计 4 个 agent。
+Four agents, designed around the workflow in this repository.
 
 ## Agents
 
-- [`Planner / Coordinator`](./planner-coordinator.md)：唯一 dispatcher。澄清、PRD、拆 issue、triage、派发。
-- [`Builder`](./builder.md)：实现 `ready-for-agent` issue。小步开发，测试优先。
-- [`Reviewer`](./reviewer.md)：用 `code-reviewer` 审查实现结果。找 bug、回归、缺测试、风险。
-- [`Inspector`](./inspector.md)：通用巡检 agent。按 `inspection_type` 路由 skill；内置极简示例类型 `todo-scan`（只读扫 `TODO`/`FIXME`/`XXX`）。scope 支持 Multica project 级或单 repo。支持 self-service bootstrap：用户口述新巡检需求 → 起草 skill + 绑定到自身 + 注册类型 + 经确认后自建 autopilot（如 `context` 等类型均经此创建）。
+- [`Planner / Coordinator`](./planner-coordinator.md): the only dispatcher. Clarification, PRD, issue slicing, triage, dispatch.
+- [`Builder`](./builder.md): implements issues in `todo`. Small steps, tests first.
+- [`Reviewer`](./reviewer.md): reviews implementation results. Finds bugs, regressions, missing tests, risk.
+- [`Inspector`](./inspector.md): general-purpose inspection agent. Routes skills on `inspection_type`; ships one minimal built-in example type, `todo-scan` (read-only scan for `TODO`/`FIXME`/`XXX`). `scope` may be a Multica project or a single repo. Supports self-service bootstrap: the user describes a new inspection need, and Inspector drafts the skill, binds it to itself, registers the type, and — after confirmation — creates the autopilot. Types such as `context` are all created this way.
 
 ## Final Skills
 
-以下记录各 agent 设计中绑定的 Skills。Matt Skills 与 Workspace Skills 分开；部署时以 Multica 实际绑定为准：
+The skills each agent design binds. Matt Skills and Workspace Skills are listed separately; at deploy time the bindings recorded in Multica are authoritative.
 
-- `Planner / Coordinator`: Matt `grilling`, `to-spec`, `to-tickets`, `triage`; Workspace `branch-mr-safety`
-- `Builder`: Matt `codebase-design`, `diagnosing-bugs`, `resolving-merge-conflicts`, `tdd`; Workspace `branch-mr-safety`
-- `Reviewer`: Matt `tdd`; Workspace `code-reviewer`, `branch-mr-safety`
-- `Inspector`: `grill-with-docs`, `handoff`, `writing-great-skills`
+- `Planner / Coordinator`: Matt `grilling`, `to-spec`, `to-tickets`, `triage`; Workspace `branch-pr-safety`
+- `Builder`: Matt `codebase-design`, `diagnosing-bugs`, `resolving-merge-conflicts`, `tdd`; Workspace `branch-pr-safety`
+- `Reviewer`: Matt `code-review`, `tdd`; Workspace `branch-pr-safety`
+- `Inspector`: Matt `grill-with-docs`, `handoff`, `writing-for-agents`
 
 ## Dispatch Rule
 
-只有 `Planner / Coordinator` 可以创建子 issue、分配 agent、推进跨 agent 状态。
+Only the `Planner / Coordinator` may create child issues, assign agents, or move cross-agent state.
 
-其他 agent 不互相调度：
+Members never dispatch each other:
 
-- `Builder` 完成后标 `ready-for-review`，并把当前 issue 交回 `Planner / Coordinator`。
-- `Reviewer` 审查后无 blocking findings 则标 `review-approved`；有 blocking findings 标 `changes-requested`。两种结果都只交回 `Planner / Coordinator`，不直接推进验收或 merge。
-- `Inspector` 默认只产出巡检报告/提议；`context` 类型经人类明确确认后可在重新触发时写入 approved context files；只读类型全程只读；危险动作必须人工确认。
+- `Builder` moves the issue to `in_review` when done and hands it back to the `Planner / Coordinator`.
+- `Reviewer` writes `review_result` (`approved` / `changes-requested` / `needs-info`) into its result packet, never as a status. Either outcome lands the review issue at `in_review` and hands it back to the `Planner / Coordinator`; Reviewer never advances acceptance or merges.
+- `Inspector` produces reports and proposals only by default. The `context` type may write approved context files on a re-trigger, and only after explicit human confirmation. Read-only types stay read-only throughout. Every dangerous action requires human confirmation.
 
-同一 repo 的 Builder 实现默认串行。只有确认使用隔离 worktree 时才允许并行。
+Builder implementation work on the same repo is serial by default. Parallel runs are allowed only with confirmed isolated worktrees.
 
 ## Notification Rule
 
-飞书群里用户只需要 @ `Planner / Coordinator`。`Planner / Coordinator` 派发时把原请求人、原群/线程和父请求链接作为内部 notification context 传给 `Builder`。
+On the chat surface where the request originated, the user only needs to @ the `Planner / Coordinator`. When dispatching, the `Planner / Coordinator` passes the original requester, the originating group/thread, and the parent request link to `Builder` as internal notification context.
 
-`Builder` 完成或阻塞后，可以在原群/线程通知原请求人一次。通知只包含实现结果、Builder MR link、build/验证结果、风险或 blocker。`Builder` 不 @ `Reviewer`，不派发其他 agent，不推进 review loop。
+On completion or blocker, `Builder` may notify the original requester once in the originating group/thread. The notification carries only the implementation result, the Builder PR link, the build/verification outcome, and any risk or blocker. `Builder` never @-mentions `Reviewer`, never dispatches another agent, and never advances the review loop.
 
-`Builder` 交回 `Planner / Coordinator` 是状态 handoff，不是派发。优先 assign 当前 issue 回 `Planner / Coordinator`；如果 Multica 不支持 assign，就在当前 issue 留一条 @Planner 的 ready-for-review/blocker 评论。用户不需要手动说“请 review”。
+`Builder` handing back to the `Planner / Coordinator` is a state handoff, not a dispatch. Prefer assigning the issue back; if assignment is unavailable, leave one @Coordinator completion or blocker comment on the issue. The user should never have to ask for review manually.
 
-`Reviewer` 不 reassign issue。完成后留一条面向用户的 @Coordinator review summary。`Planner / Coordinator` 负责 review-fix、Builder MR merge、用户验收和 Final MR。
+`Reviewer` does not reassign issues beyond handing back. On completion it leaves one user-facing @Coordinator review summary. The `Planner / Coordinator` owns the review-fix cycle, the Builder PR merge, user acceptance, and the Final PR.
 
-`Inspector` 完成后写一个 Inspection result packet，再把当前 inspection issue 交回 `Planner / Coordinator`。实现建议必须新建独立 issue，重新通过 ready-for-agent gate。
+`Inspector` writes one Inspection result packet on completion, then hands the inspection issue back to the `Planner / Coordinator`. Implementation recommendations must become their own issue and pass the ready-for-work gate again before reaching `todo`.
 
-权限边界：
+Authority boundaries:
 
-- 派发权：只有 `Planner / Coordinator`。
-- 执行权：`Builder`。
-- 完成/阻塞通知权：`Builder` 可通知原请求人/原群。
-- 复审触发权：只有 `Planner / Coordinator`。
+- Dispatch: `Planner / Coordinator` only.
+- Execution: `Builder`.
+- Completion/blocker notification: `Builder` may notify the original requester or group.
+- Triggering a re-review: `Planner / Coordinator` only.
 
 ## Review Loop Budget
 
-只有 `Planner / Coordinator` 能触发 `Reviewer`。一次 `code-reviewer` 输出就是一个 review round，里面的 P0/P1/P2 findings 不按条计数。`Builder` 可以分批修复同一轮 findings，但修完全部必修项后只交回 `Planner` 一次。复审时 `Reviewer` 只验证上一轮 findings 是否解决，以及修复是否引入明显新 P0/P1 回归；不要把修复代码当成全新实现重新全量 review。每个 issue 最多 1 次自动 review-fix cycle，第二次 `changes-requested` 后停止自动化，标 `needs-human-decision`。
+Only the `Planner / Coordinator` may trigger `Reviewer`. One review run is one review round; the P0/P1/P2 findings inside it are not counted individually. `Builder` may fix findings from the same round in several batches, but hands back to the Coordinator once, after every required finding is done. A follow-up review verifies only whether the previous round's findings were resolved and whether the fix introduced an obvious new P0/P1 regression — it does not re-review the fix as if it were unrelated new work. At most one automatic review-fix cycle per issue; on a second `changes-requested`, stop automating, move the issue to `needs-clarification`, and state the human decision needed.
 
 ## Human Gates
 
-- PRD 确认。
-- Final MR 创建授权。
-- 用户验收确认。
-- Final MR merge 确认。
+- PRD confirmation.
+- Authorization to open the Final PR.
+- Final PR review and merge, done on GitHub.
+- `done` is written by a human. Agents land at `in_review`.
 
-Builder MR（`work_branch -> source_branch`）是内部集成步骤：Reviewer 通过后由 `Planner / Coordinator` 在策略允许时合并；策略不允许时进入 `ready-for-builder-mr-merge`，等待人工合并。合并并验证 reviewed head 已进入 `source_branch` 后，先获人类授权创建 Final MR；Final MR 合入目标环境后，才进入用户验收。
+The Builder PR (`work_branch -> source_branch`) is an internal integration step. After Reviewer approval the `Planner / Coordinator` merges it where policy allows, and otherwise asks a human to merge and waits. Once the merge is done and the reviewed head is verified to be in `source_branch`, obtain human authorization to open the Final PR. The Final PR is the human review gate: agents open it, move the parent to `in_review`, and stop.
 
-## Canonical State Flow
+## Status Model
+
+Planning state lives in the issue status and nowhere else. Statuses are
+exclusive; labels are a set. An issue that is simultaneously `prd-draft` and
+`needs-triage` is a bug we would otherwise have to prevent, so planning state
+never uses labels.
+
+Issue JSON exposes `status`, `status_category`, and `status_name` separately.
+**Every agent branches on `status_category`, never on the status name.** A
+custom status inherits its category's platform behaviour in full: the category
+is the contract, the name is for humans and differs per workspace.
+
+Four custom statuses, created once in Settings → Issue Statuses, plus the
+built-ins:
+
+| Status | Category | Meaning |
+|---|---|---|
+| `needs-clarification` | `blocked` | Coordinator is waiting on a human answer |
+| `blocked` | `blocked` | Waiting on something that is not a question |
+| `prd-draft` | `backlog` | Drafting the spec |
+| `ready-for-slicing` | `backlog` | Spec done, not yet sliced |
+| `needs-triage` | `backlog` | Sliced, not yet prioritised |
+| `todo` | `todo` | Executable — native `todo` *is* `ready-for-agent` |
+| `in_progress` | `in_progress` | Work underway |
+| `in_review` | `in_review` | Delivered, awaiting human acceptance |
+| `done` | `done` | Human only |
+| `cancelled` | `cancelled` | Dropped |
+
+Why this works: assigning an issue that sits in a backlog-category status does
+not start a run, and moving it out of backlog wakes the assignee. So the parked
+statuses are exactly the planning ones, and reaching `todo` is the moment work
+becomes executable. The platform enforces the pipeline; no agent has to.
 
 ```text
-needs-clarification
--> prd-draft
--> ready-for-slicing
--> needs-triage
--> ready-for-agent
--> in-progress
--> ready-for-review
--> review-approved
--> ready-for-final-mr-approval
--> ready-for-human-merge
--> ready-for-acceptance
--> done
+needs-clarification (blocked, any point)
+prd-draft -> ready-for-slicing -> needs-triage   (backlog: parked)
+-> todo          (executable; assignment now starts the agent)
+-> in_progress
+-> in_review     (agents stop here)
+-> done          (human)
 ```
 
-Optional policy fallback:
+There is no post-implementation status vocabulary. The upstream
+`ready-for-review` / `review-approved` / `ready-for-acceptance` /
+`ready-for-human-merge` chain is deleted, not migrated: those handoffs are now
+child-issue ownership plus comment packets. `review_result` is a field in the
+Reviewer's packet, not a status.
 
-```text
-review-approved
--> ready-for-builder-mr-merge
--> ready-for-final-mr-approval
--> ready-for-human-merge
--> ready-for-acceptance
-```
+## Squad Mechanics
 
-Review return:
+The Coordinator is the squad leader. The platform does not do these for it:
 
-```text
-ready-for-review
--> changes-requested
--> ready-for-agent
-```
+- **Squads do not fan out.** Assigning an issue to the squad enqueues the leader
+  only. The Coordinator creates child issues and assigns each to a named member.
+- **Members never assign to each other.** Every handoff returns to the Coordinator.
+- **Dependency ordering uses `--stage N`.** The leader is woken only when every
+  sub-issue in a stage finishes.
+- **Review is its own child issue assigned to the Reviewer** — a separate run
+  with fresh context, a stronger isolation boundary than a sub-agent, and it
+  removes author bias.
+- **Parent status authority belongs to the leader**, and only while the issue is
+  assigned to this squad. The server does not flip the parent when children
+  finish.
+- **`done` stays human.** Agents land work at `in_review`; the GitHub review is
+  the gate.
+- **Execution is serial.** Keep `max_concurrent_tasks: 1` on every agent. Where
+  a plan needs genuine parallelism, prefer sub-agent fan-out inside one ticket
+  over concurrent tickets, so the work stays on one branch.
 
-## Branch And MR Safety
+## Branch And PR Safety
 
-统一使用 [`branch-mr-safety`](../skills/branch-mr-safety/SKILL.md)。分支/MR 是 agent 内部控制面，不是默认用户汇报内容。用户默认只看到实现结果、MR link、验证结果、风险和需要人工决定的 blocker。
+Everyone uses [`branch-pr-safety`](../skills/branch-pr-safety/SKILL.md). Branch and PR fields are the agents' internal control plane, not default user-facing reporting. By default the user sees the implementation result, the PR link, the verification outcome, risks, and any blocker needing a human decision.
 
-`Planner / Coordinator` 在派发前，先读取 child issue 的可见 key，再把目标、验收标准、验证与完整 Delivery Context 写入 child issue：`repo`、`base_branch`、`source_branch`、`source_branch_status`、`issue_key`、`work_branch`、`builder_mr_target`、`final_mr_target`。这是为当前无私有派发载体保留的最小分支安全上下文；公开 issue 不写 agent packet、SHA、commands、raw test output 或 routing 字段。
+Before dispatching, the `Planner / Coordinator` reads the child issue's visible key, then writes the goal, acceptance criteria, verification, and complete Delivery Context into the child issue: `repo`, `base_branch`, `source_branch`, `source_branch_status`, `issue_key`, `work_branch`, `builder_pr_target`, `final_pr_target`. This is the minimum branch-safety context kept on the issue because there is no private dispatch channel; the public issue carries no agent packets, SHAs, commands, raw test output, or routing fields.
 
-Builder 完成后只写变更、Builder MR、build/test 结论、风险与 `source_branch`。Planner 从 Git/MR 获取 refs、diff、changed files、检查结果和分支状态。
+On completion, Builder reports only the change, the Builder PR, the build/test conclusion, the risks, and `source_branch`. The Coordinator gets refs, diff, changed files, check results, and branch state from Git/PR.
 
-Planner 派发 Reviewer 时提供 public issue 与 Builder MR link。Reviewer 从 Git/MR 解析 immutable diff、测试和分支状态。
+When creating the review issue, the Coordinator supplies the public issue and the Builder PR link. Reviewer resolves the immutable diff, tests, and branch state from Git/PR.
 
-Reviewer 输出公开 Review summary：result、Builder MR、blocking findings、non-blocking follow-ups、test gaps、residual risks。每个 finding 必须有稳定 id；review refs 与 branch state 留在 Git/MR。
+Reviewer publishes a public Review summary: result, Builder PR, blocking findings, non-blocking follow-ups, test gaps, residual risks. Every finding needs a stable id; review refs and branch state stay in Git/PR.
 
-Inspector 输出 Inspection result packet：type、scope、result、action required、human approval、approved scope、findings、evidence、actions、follow-up refs、remaining decisions。
+Inspector publishes an Inspection result packet: type, scope, result, action required, human approval, approved scope, findings, evidence, actions, follow-up refs, remaining decisions.
 
-`work_branch` 必须使用可见 issue key：`agent/<issue_key>-<short-slug>`，例如 `agent/MIC-338-onelink-month`。不要用 project id、UUID 或内部 task id。
+`work_branch` must use the visible issue key: `agent/<issue_key>-<short-slug>`, for example `agent/PROJ-338-deep-link`. Never a project id, a UUID, or an internal task id.
 
-`repo` 可以是 Multica project name、repository name 或 remote URL。若 workspace/issue 上下文只有一个 project/repo，`Planner / Coordinator` 应直接推断 `repo`，不要询问 repo 地址。
+`repo` may be a Multica project name, a repository name, or a remote URL. If the workspace or issue context exposes exactly one project/repo, the `Planner / Coordinator` infers `repo` directly and does not ask for a repo address.
 
-新需求默认 `source_branch_status: create_if_missing`。这表示远端 `source_branch` 不存在是预期状态，`Builder` 应从 latest `base_branch` 创建并 push。只有用户指定既有集成/feature/hotfix 分支时，才用 `source_branch_status: must_exist`。
+New requirements default to `source_branch_status: create_if_missing`. A missing remote `source_branch` is therefore the expected state, and `Builder` creates it from the latest `base_branch` and pushes it. Use `source_branch_status: must_exist` only when the user names an existing integration, feature, or hotfix branch.
 
 ## Build Check
 
-UI 变更由 `Builder` 在标 `ready-for-review` 前跑通项目 build；build 失败 = 交付未完成。交互/视觉验收在 Final MR 合入后的 test 环境进行。
+`Builder` runs the project build for UI changes before moving the issue to `in_review`; a failing build means the delivery is not done. Interactive and visual acceptance happens on the target environment after the Final PR is merged.
 
-测试有既有 seam 时，Builder 补焦点覆盖，Reviewer 按缺测审查；没有可行 seam 时，Planner 在 issue 记录证据与 fallback 验证，Builder 不新建测试框架，Reviewer 把 test gap 作为风险而非自动 blocking。
+Where an existing test seam is available, Builder adds focused coverage and Reviewer reviews for missing tests. Where no viable seam exists, the Coordinator records the evidence and the fallback verification on the issue, Builder does not stand up a new test framework, and Reviewer treats the test gap as a risk rather than an automatic blocker.
 
 ## Shared Communication Instruction
 
 ```md
 Communication:
 
-- Use terse simplified Chinese.
+- Use terse English.
 - No filler, pleasantries, hedging, repetition.
 - Pattern: [thing] [action] [reason]. [next step].
 - Keep code symbols, API names, errors, commands exact.
-- Use normal clear Chinese for security warnings, destructive actions, and order-sensitive steps.
+- Use normal, clear prose for security warnings, destructive actions, and order-sensitive steps.
 ```
 
 ## Skill Precedence
 
-Agent instructions and issue/MR context override loaded Skill workflows。Skill 只提供方法和模板，不扩大 Agent 权限，不跳过人工闸门，不改变 dispatcher ownership。
+Agent instructions and issue/PR context override loaded Skill workflows. Skills provide methods and templates only. They do not widen an agent's permissions, skip a human gate, or change dispatcher ownership.
 
-- Coordinator 可使用 `to-spec` / `to-tickets` / `triage` 做范围内只读源码探索；禁止 checkout、编辑、安装依赖、运行项目代码/构建/测试、自动 `ready-for-agent`、自动 `/implement`。
-- Builder 把 issue 中的验证路径视为已确认；Skill 不得自行触发 review 或 Final MR。
-- Reviewer 固定审查 Builder MR 解析出的 immutable commit refs；Skill 不得询问用户修哪些项、实施修复或直接触发 Builder。
-- Inspector 只执行当前 `inspection_type` 明确授权的动作。
+- Coordinator may use `to-spec` / `to-tickets` / `triage` for in-scope read-only source exploration. It must not check out code, edit, install dependencies, run project code/build/tests, move an issue to `todo` automatically, or invoke `/implement`.
+- Builder treats the issue's verification path as already confirmed. No skill may trigger review or open the Final PR on its own.
+- Reviewer always reviews the immutable commit refs resolved from the Builder PR. No skill may ask the user which findings to fix, apply fixes, or trigger Builder directly.
+- Inspector performs only the actions the current `inspection_type` explicitly authorizes.
 
 ## Deployment Sync Rule
 
-`agents/*.md` 是设计源，Multica server instructions 是运行副本。每次修改必须：
+`agents/*.md` is the design source; the instructions stored on the Multica server are the runtime copy. Every edit requires:
 
-1. 同步对应 Agent instructions 到 Multica。
-2. 在 Multica Agent description 记录同一 `Instruction version`。
-3. 核对 Agent name、bound Skills、max concurrency、instructions version。
-4. 用一个无副作用 smoke issue 验证状态转换、MR 证据读取和交接。
+1. Sync that agent's instructions to Multica.
+2. Record the same `Instruction version` in the Multica agent description.
+3. Verify the agent name, bound skills, max concurrency, and instruction version.
+4. Run one side-effect-free smoke issue to verify status transitions, PR evidence reads, and the handoff.
 
-当前版本：Coordinator `2026-08-13.13`；Builder `2026-08-13.9`；Reviewer `2026-08-13.9`；Inspector `2026-07-27.1`。后续 repo 文件更新仍不代表 server 已自动同步。
+Current versions: Coordinator `2026-08-13.13`; Builder `2026-08-13.9`; Reviewer `2026-08-13.9`; Inspector `2026-07-27.1`. A later change to a repo file still does not mean the server was synced.
