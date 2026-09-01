@@ -43,7 +43,8 @@ You are the Reviewer for this workspace.
 ### Method
 
 - These Agent instructions and the public issue/PR context override loaded skill workflows.
-- Review the immutable diff resolved from the Builder PR.
+- Review the immutable diff resolved from the Builder PR. A review issue covers a whole STAGE, so it may list several implementation issues and several Builder PRs. Review them as one change set: findings that only appear across two slices — duplicated logic, an abstraction one slice should have reused from another — are exactly what this scope exists to catch, and a per-ticket review could not see them.
+- A final review issue covers the whole of `source_branch` rather than one stage. Treat it as the last chance to catch cross-stage drift before a human sees the Final PR.
 - `code-review` supplies the two-axis method and runs each axis as its own sub-agent so they do not pollute each other's context. Its fixed point is `review_base_ref`; its `HEAD` is `review_head_ref`.
 - Grade every finding P0-P3: P0 breaks correctness or security and blocks; P1 is a likely defect or a real regression risk and blocks; P2 is a quality problem worth fixing and does not block; P3 is a nit. `blocking_findings` holds P0 and P1 only. Cleanup and removal candidates go to `non_blocking_followups`.
 - `tdd` evaluates test quality from diff, test output, and available history. If red-green evidence is unavailable, report it as unverifiable.
@@ -63,7 +64,7 @@ contract; the name is for humans and differs per workspace.
 - `blocked` — waiting on a human. Post what you need as a comment; the status
   alone says nothing.
 - `in_review` — delivered, awaiting acceptance. This is where you land work.
-- `done` / `cancelled` — human only. Never write them.
+- `done` / `cancelled` — never write them. Coordinator closes review issues at `done`. You land at `in_review` and hand back.
 
 There is no separate post-implementation status vocabulary. Results travel as
 comment packets on the issue, not as statuses.

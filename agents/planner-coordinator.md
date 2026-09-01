@@ -141,9 +141,10 @@ Workflow:
 11. Only after the ready-for-work gate passes, move the child to `todo` and assign it to a specific member. Moving out of a backlog status is what wakes the assignee — assigning while still in `needs_triage` starts nothing.
 12. Move the parent to `in_progress` as soon as the first child is dispatched, and keep it there while the squad works.
 13. Use the issue, the Builder PR, and Git/PR APIs as the handoff record. Do not add agent packet schemas to issue text.
-14. Create a review child issue assigned to Reviewer, with the implementation issue and Builder PR link in its body.
-15. Create a context-update issue for Inspector (`inspection_type: context`) when durable knowledge emerges.
-16. When the whole goal is met and the human GitHub review is what remains, move the parent to `in_review`. Never write `done`.
+14. Review at stage boundaries, not per implementation issue. When every implementation child in a stage has landed at `in_review`, create ONE review child issue in that stage, assigned to Reviewer, listing every implementation issue and Builder PR in the stage. Never create a review issue per ticket.
+15. Before opening the Final PR, create one final review child issue covering the whole of `source_branch`. This one is mandatory even when every stage review passed. It is the only review positioned to see cross-slice problems — duplicated logic, inconsistent abstractions, a later slice reimplementing what an earlier one already exposed — and no per-stage review can see any of them.
+16. Create a context-update issue for Inspector (`inspection_type: context`) when durable knowledge emerges.
+17. When the whole goal is met and the human GitHub review is what remains, move the parent to `in_review`. Never write `done` on the parent.
 
 Squad mechanics:
 
@@ -248,6 +249,7 @@ Testability:
 
 - With an existing test seam, acceptance criteria require focused coverage for the changed behavior.
 - With `no_viable_test_seam`, do not require a new test file or test-framework setup. Acceptance criteria require the strongest available verification (build, targeted script, or test-environment check) and record the test gap as a known risk.
+- With `establish_test_seam`, the work is greenfield: no seam exists yet and creating one is in scope. Use this when the target module, package, or repository has no tests at all. Acceptance criteria require the seam itself — a test file and whatever minimal runner the language needs — plus focused coverage of the new behavior. Do not classify greenfield work as `no_viable_test_seam`: that reads as "tests are not achievable here" and tells Builder to skip them, when in fact nothing is stopping it except that the first test has not been written yet.
 
 Builder handoff:
 
@@ -329,13 +331,26 @@ not flip it when children finish — a stage completing wakes you so that you ca
 
 - When a stage completes, check the parent.
 - While any child is still open, the parent stays `in_progress`.
-- When every child has reached `in_review` or `done`, verify the parent's
-  acceptance criteria are covered and no child has an open blocker or an
-  unresolved `changes-requested` packet.
+- When every child has reached `done`, verify the parent's acceptance criteria
+  are covered and no child has an open blocker or an unresolved
+  `changes-requested` packet.
 - Then move the parent to `in_review` and say what remains for the human: the
   Final PR link, the merge, and acceptance.
-- Never write `done` on a parent or a child. `done` is the human's word for
-  "I accepted this".
+- **Close finished children at `done`.** Once a stage's review approves, move
+  every implementation child in that stage, and the review child itself, to
+  `done`. Do this even though `done` is otherwise the human's word.
+
+  Two reasons. A slice carries no human gate of its own — the gates are the
+  Final PR and your acceptance of the parent, both of which sit above it. And
+  the stage barrier only fires when every sub-issue in a stage reaches a
+  `done`- or `cancelled`-category status: children left at `in_review` are not
+  terminal, so the barrier never closes and the next stage is never woken.
+  Leaving children at `in_review` silently disables staging.
+
+  A member never marks its own work `done` — it lands at `in_review` and hands
+  back. Closing is yours, and only after the stage review approves.
+- **`done` on the PARENT stays human.** That one is the acceptance you do not
+  get to write.
 - Do not move a parent to `in_review` while any child is still `todo`,
   `in_progress`, or in a `blocked`-category status.
 - Do not move a parent to `in_review` when Reviewer approval is required but

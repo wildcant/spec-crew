@@ -131,6 +131,19 @@ The Coordinator is the squad leader. The platform does not do these for it:
 - **Review is its own child issue assigned to the Reviewer** — a separate run
   with fresh context, a stronger isolation boundary than a sub-agent, and it
   removes author bias.
+- **One review per stage, not per ticket**, plus one mandatory final review over
+  the whole of `source_branch` before the Final PR. A slice never ships on its
+  own — everything lands as one Final PR — so reviewing per slice gates
+  something that has no gate, and ten tickets would cost thirty agent sessions.
+  Stage boundaries are where a mistake starts getting expensive, so that is
+  where review belongs. The final pass is the only one that can see cross-slice
+  problems, and it is not optional.
+- **Children close at `done`; the parent does not.** Once a stage's review
+  approves, the Coordinator moves that stage's children to `done`. The stage
+  barrier only fires on a `done`- or `cancelled`-category status, so children
+  parked at `in_review` silently disable staging. Members never close their own
+  work — they land at `in_review` and hand back. `done` on the PARENT stays
+  human.
 - **Parent status authority belongs to the leader**, and only while the issue is
   assigned to this squad. The server does not flip the parent when children
   finish.

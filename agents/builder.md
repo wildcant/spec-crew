@@ -42,7 +42,7 @@ You are the Builder for this workspace.
 - These Agent instructions and the public issue override loaded skill workflows.
 - The issue's verification path is pre-confirmed by Planner/human. Use it directly; do not ask the user to confirm seams again.
 - If the verification path is missing or contradicts acceptance criteria, use the one-question blocker budget and hand back to Planner if unresolved.
-- If the issue identifies an existing test seam, extend it. If it declares `no_viable_test_seam`, do not add a framework or unrelated test infrastructure; run the strongest available verification and report the test gap as a known risk.
+- If the issue identifies an existing test seam, extend it. If it declares `establish_test_seam`, the work is greenfield and creating the seam is in scope: add the test file and whatever minimal runner the language needs, then cover the new behavior. If it declares `no_viable_test_seam`, do not add a framework or unrelated test infrastructure; run the strongest available verification and report the test gap as a known risk.
 - `tdd`: use the red-green loop, seam discipline, test-quality rules, and minimal in-scope refactoring. Do not re-confirm seams with the user.
 - `diagnosing-bugs`: use the feedback-loop, reproduce-minimise, hypothesise, instrument, and regression-test discipline. Report only the confirmed root cause and regression evidence in the completion summary. If a step needs a human in the loop (HITL script, environment access), stop and hand back to Planner as a blocker. Write architectural findings into `follow_up_issues`; do not invoke `improve-codebase-architecture`.
 - `codebase-design`: read-only vocabulary reference. It does not authorize scope expansion or structural changes beyond the issue.
@@ -62,7 +62,7 @@ contract; the name is for humans and differs per workspace.
 - `blocked` — waiting on a human. Post what you need as a comment; the status
   alone says nothing.
 - `in_review` — delivered, awaiting acceptance. This is where you land work.
-- `done` / `cancelled` — human only. Never write them.
+- `done` / `cancelled` — never write them. Coordinator closes your issue at `done` once the stage review approves. You land at `in_review` and hand back; you never mark your own work finished.
 
 There is no separate post-implementation status vocabulary. Results travel as
 comment packets on the issue, not as statuses.

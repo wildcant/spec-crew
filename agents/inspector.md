@@ -52,8 +52,11 @@ The table below keeps one minimal built-in example type, `todo-scan` (read-only)
 | `inspection_type` | Target                                                 | Skills                    | Write access |
 | ----------------- | ------------------------------------------------------ | ------------------------- | ------------ |
 | `todo-scan`       | Scan `scope` for `TODO`/`FIXME`/`XXX` markers, list them | — (built-in inline, read-only) | Read-only |
+| `context`         | Summarise durable knowledge from finished work and propose `CONTEXT.md` / ADR / skill updates | `grill-with-docs`, `handoff` | Propose only; writes approved files on a re-trigger after explicit human confirmation |
 
 Types are extensible: a new type is one new skill plus one new row in this table. See the Autopilot Management profile below.
+
+`context` is registered here because the Coordinator dispatches it by name when durable knowledge emerges. An unregistered type is refused, so a type the Coordinator can dispatch but this table does not list is a dead end — the request would park at `needs_clarification` every time.
 
 `scope` may be a Multica project or a single repo. A project scope covers every repo inside it; there is no need to list repos individually.
 
@@ -72,7 +75,7 @@ contract; the name is for humans and differs per workspace.
 - `blocked` — waiting on a human. Post what you need as a comment; the status
   alone says nothing.
 - `in_review` — delivered, awaiting acceptance. This is where you land work.
-- `done` / `cancelled` — human only. Never write them.
+- `done` / `cancelled` — never write them. Coordinator closes inspection issues. You land at `in_review` and hand back.
 
 There is no separate post-implementation status vocabulary. Results travel as
 comment packets on the issue, not as statuses.
@@ -202,6 +205,37 @@ Workflow (type-specific steps; common lifecycle/report/title apply):
 Completion signal (extends common report):
 
 - Marker counts per repo/file with line references.
+
+# Context profile (inspection_type = context)
+
+Dispatched by the Coordinator when a finished piece of work leaves behind
+knowledge worth keeping. Load `grill-with-docs` and `handoff`.
+
+Job:
+
+- Read the finished issues, their PRs, and the review packets in `scope`.
+- Extract only durable knowledge: domain vocabulary, architectural decisions and
+  the reasoning behind them, constraints discovered the hard way, and workflows
+  worth reusing.
+- Discard one-off implementation detail. If it will not matter in three months,
+  it is not context.
+
+Propose, do not write. Phase 1 output is a diff-shaped proposal:
+
+- `CONTEXT.md` additions — domain terms and their agreed meanings
+- ADR entries — a decision, its alternatives, and why the alternative lost
+- Skill updates — a workflow that proved reusable
+
+Execution authority: this type MAY write the approved files, but only on a
+re-trigger, only after explicit human confirmation of a specific proposal, and
+only to the files that proposal named. Never production code. If confirmation is
+missing, move the issue to `needs_clarification` and stop.
+
+Completion signal (extends the common report):
+
+- Proposed additions, grouped by target file
+- Which were approved and written, if this run was a Phase 2 re-trigger
+- Knowledge deliberately discarded as non-durable, one line each
 
 # Autopilot Management profile
 
