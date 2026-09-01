@@ -73,14 +73,20 @@ exclusive, labels are a set. Four custom statuses plus the built-ins:
 
 | Status | Category | Meaning |
 |---|---|---|
-| `needs-clarification` | `blocked` | Coordinator is waiting on a human answer |
-| `prd-draft` | `backlog` | Drafting the spec |
-| `ready-for-slicing` | `backlog` | Spec done, not yet sliced |
-| `needs-triage` | `backlog` | Sliced, not yet prioritised |
+| `needs_clarification` | `blocked` | Coordinator is waiting on a human answer |
+| `prd_draft` | `backlog` | Drafting the spec |
+| `ready_for_slicing` | `backlog` | Spec done, not yet sliced |
+| `needs_triage` | `backlog` | Sliced, not yet prioritised |
 | `todo` | `todo` | Executable — native `todo` *is* `ready-for-agent` |
 | `in_progress` | `in_progress` | Work underway |
 | `in_review` | `in_review` | Delivered, awaiting human acceptance |
 | `done` | `done` | Human only |
+
+A status **key** is 1-32 characters of lowercase letters, digits, or underscore
+— hyphens are rejected by the server. The keys above are the canonical ones this
+kit expects; if your workspace already uses different keys for the same
+categories, `bootstrap/` rewrites these instructions to match rather than
+requiring you to rename anything.
 
 The platform enforces this pipeline rather than convention: assigning an issue
 that sits in a backlog-category status does not start a run, and moving it out
@@ -106,7 +112,7 @@ human input -> Coordinator bounded clarification -> draft PRD -> human confirmat
 
 - Matt skills: `grilling`, `grill-with-docs`, `domain-modeling`, `to-spec`, `to-tickets`, `triage`.
 - Limit: at most 2 clarification rounds. Nothing reaches implementation before confirmation.
-- Output: PRD, small issues, acceptance criteria, dependencies, and a status of `todo` or `needs-clarification`.
+- Output: PRD, small issues, acceptance criteria, dependencies, and a status of `todo` or `needs_clarification`.
 
 ### Confirmed PRD
 
@@ -137,7 +143,7 @@ bug issue -> Builder reproduces -> diagnosing-bugs isolates -> minimal fix
 ```
 
 - Matt skills: `diagnosing-bugs`, `tdd`.
-- Limit: with no reproduction steps the issue goes to `needs-clarification`. Do not guess at a fix.
+- Limit: with no reproduction steps the issue goes to `needs_clarification`. Do not guess at a fix.
 - Output: reproduction, root cause, fix, regression test.
 
 ### Code review
@@ -183,9 +189,19 @@ stop; a human reviews and merges it. `done` stays human.
 
 ## Loading these into your workspace
 
-Nothing here is auto-applied. `agents/*.md` is the design source; Multica stores
-the instructions as an opaque string. Editing a file in this repo changes
-nothing on the server.
+```bash
+./bootstrap/bootstrap.sh --dry-run    # print every call, change nothing
+./bootstrap/bootstrap.sh              # do it
+```
+
+That script does everything below, and is safe to re-run. See
+[`bootstrap/README.md`](bootstrap/README.md) — in particular for what to do when
+your workspace already uses different status keys, and for the three things that
+have no CLI at all.
+
+The manual equivalent, for reference. Nothing here is auto-applied:
+`agents/*.md` is the design source, and Multica stores the instructions as an
+opaque string, so editing a file in this repo changes nothing on the server.
 
 1. **Create the four custom statuses** in Settings → Issue Statuses, with the
    categories in the table above. Category is what the platform acts on.

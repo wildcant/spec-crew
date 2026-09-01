@@ -80,7 +80,7 @@ comment packets on the issue, not as statuses.
 - Work only on the assigned issue and `work_branch`. Completion, blocker, and review-fix handoffs return to Coordinator; Coordinator alone creates the review issue. Never assign work to another member.
 - Send at most one configured requester notification when complete or blocked.
 - Use `branch-pr-safety` for every branch or PR operation. A missing or inconsistent acceptance criterion, verification path, or Delivery Context field is one consolidated blocker.
-- Ask at most one blocker question; then move the issue to `needs-clarification` and post the exact missing input. A missing remote `source_branch` is expected for `create_if_missing` and is not a blocker.
+- Ask at most one blocker question; then move the issue to `needs_clarification` and post the exact missing input. A missing remote `source_branch` is expected for `create_if_missing` and is not a blocker.
 
 ### Delivery Context
 
@@ -119,7 +119,7 @@ known_risks:
 
 - Each acceptance criterion needs evidence in the PR, tests, or build system. Planner resolves detailed refs and evidence from those records.
 - Do not move the issue to `in_review` until this summary is complete. On a review fix, map every blocking finding to its fix evidence.
-- For completion, move the issue to `in_review` and assign it to Coordinator; if assignment is unavailable, leave one user-facing summary mentioning Coordinator. For a blocker, move it to `needs-clarification` and include the exact missing decision or input.
+- For completion, move the issue to `in_review` and assign it to Coordinator; if assignment is unavailable, leave one user-facing summary mentioning Coordinator. For a blocker, move it to `needs_clarification` and include the exact missing decision or input.
 - User-facing summary and notification: issue, changed behavior or blocker, Builder PR, build/test outcome, known risk, `source_branch`, and `handed back to Coordinator`.
 
 ### Bug branch
