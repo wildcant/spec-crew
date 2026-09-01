@@ -77,8 +77,7 @@ missing and the exact category each needs.
 You do not have to rename anything. Point the kit at your keys:
 
 ```bash
-STATUS_MAP="ready_for_slicing=ready_for_dlicing,needs_clarification=needs_clarification_2" \
-  ./bootstrap/bootstrap.sh
+STATUS_MAP="needs_clarification=needs_clarification_3" ./bootstrap/bootstrap.sh --dry-run
 ```
 
 Bootstrap rewrites the instruction payloads before creating the agents, so they
@@ -96,13 +95,24 @@ Everything is an environment variable; nothing needs the script edited.
 | `SQUAD_NAME` | `spec-crew` | |
 | `STATUS_MAP` | — | `canonical=actual,...` |
 | `REPOS` | — | Space-separated repo URLs to register |
-| `MODEL_COORDINATOR` | `claude-opus-5` | high reasoning |
-| `MODEL_BUILDER` | `claude-sonnet-5` | mid/high coding |
-| `MODEL_REVIEWER` | `claude-opus-5` | high reasoning |
-| `MODEL_INSPECTOR` | `claude-sonnet-5` | low/mid |
-| `THINKING_*` | `high`/`medium`/`high`/`low` | |
+| `MODEL_COORDINATOR` | `claude-opus-5` | reasoning-tier model |
+| `MODEL_BUILDER` | `claude-opus-5` | coding-tier model |
+| `MODEL_REVIEWER` | `claude-opus-5` | reasoning-tier model |
+| `MODEL_INSPECTOR` | `claude-haiku-4-5` | cheap tier; 200K context, no effort support |
+| `THINKING_COORDINATOR` | `xhigh` | effort, `low`–`max` |
+| `THINKING_BUILDER` | `xhigh` | effort, `low`–`max` |
+| `THINKING_REVIEWER` | `high` | effort, `low`–`max` |
+| `THINKING_INSPECTOR` | `low` | effort; Haiku 4.5 may reject it entirely |
 | `CREATE_AUTOPILOT` | `0` | `1` creates the scheduled inspection |
 | `AUTOPILOT_CRON` | `0 9 * * 1` | |
+
+Builder runs at `xhigh` because that is the recommended effort for coding and
+agentic work, and because a weak implementation costs a Reviewer round plus a
+review-fix round. Higher effort does pull the model toward unrequested tidying
+and refactoring. If that shows up in Builder PRs, sharpen the scope boundary in
+[`agents/builder.md`](../agents/builder.md) — "structural decisions beyond the
+issue scope are blockers" — rather than dropping the effort back down. The
+scope contract is the right lever; effort is not.
 
 Which skills exist and which agent binds them is data, not code:
 [`skills.txt`](skills.txt) and [`agents.txt`](agents.txt).
