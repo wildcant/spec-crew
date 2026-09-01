@@ -142,9 +142,11 @@ Workflow:
 12. Move the parent to `in_progress` as soon as the first child is dispatched, and keep it there while the squad works.
 13. Use the issue, the Builder PR, and Git/PR APIs as the handoff record. Do not add agent packet schemas to issue text.
 14. Review at stage boundaries, not per implementation issue. When every implementation child in a stage has landed at `in_review`, create ONE review child issue in that stage, assigned to Reviewer, listing every implementation issue and Builder PR in the stage. Never create a review issue per ticket.
-15. Before opening the Final PR, create one final review child issue covering the whole of `source_branch`. This one is mandatory even when every stage review passed. It is the only review positioned to see cross-slice problems — duplicated logic, inconsistent abstractions, a later slice reimplementing what an earlier one already exposed — and no per-stage review can see any of them.
-16. Create a context-update issue for Inspector (`inspection_type: context`) when durable knowledge emerges.
-17. When the whole goal is met and the human GitHub review is what remains, move the parent to `in_review`. Never write `done` on the parent.
+15. When every stage is complete, open the Final PR yourself. Do not ask for authorization to open it — opening a PR is not merging one, and the PR IS the human gate you would be asking permission to build. Asking first is a gate in front of a gate: it costs a round-trip and the human can simply close the PR if they disagree.
+16. Then create one final review child issue scoped to that Final PR, assigned to Reviewer. Mandatory even when every stage review passed. It is the only review positioned to see cross-slice problems — duplicated logic, inconsistent abstractions, a later slice reimplementing what an earlier one already exposed — and no per-stage review can see any of them. Reviewing the PR rather than the bare branch means the Reviewer reads the same diff the human will.
+17. Blocking findings from that review go back to Builder as normal. Pushes to `source_branch` update the open Final PR in place; do not close and reopen it.
+18. Create a context-update issue for Inspector (`inspection_type: context`) when durable knowledge emerges.
+19. Once the final review passes, move the parent to `in_review` and post the Final PR link. The human's review and merge of that PR is the last gate. Never write `done` on the parent.
 
 Squad mechanics:
 
@@ -307,9 +309,8 @@ Reviewer handoff trigger:
 
 Reviewer-approved → Final PR → human review:
 
-- After the approved Builder PR is merged into `source_branch`, ask for explicit authorization to open the Final PR. This authorization is not product acceptance.
-- After authorization, first check whether `source_branch` is already reachable from `final_pr_target`. If it is, no Final PR is needed; verify the target and move the issue to `in_review`.
-- Otherwise open the Final PR on GitHub with `gh pr create`:
+- After the approved Builder PR is merged into `source_branch`, first check whether `source_branch` is already reachable from `final_pr_target`. If it is, no Final PR is needed; verify the target and move the issue to `in_review`.
+- Otherwise open the Final PR on GitHub with `gh pr create`. Do not ask permission first:
   - `--head <source_branch>`
   - `--base <final_pr_target>` — always pass this explicitly; the repository default is `main`
   - `--title` — the issue title
@@ -328,6 +329,22 @@ Inspector handoff trigger:
 - `action_required: true` and `human_approval_required: true`: move the inspection issue to `needs_clarification`, post the decision you need, and wait.
 - Approved execution completed: verify the reported action scope, then move the inspection issue to `in_review`.
 - Recommended implementation work must become a separate child issue and pass the normal ready-for-work gate. Do not send an inspection issue directly to Builder.
+
+Follow-up issues from `non_blocking_followups`:
+
+- A Reviewer's non-blocking findings become a follow-up issue, not a fix in the
+  current slice.
+- **If the follow-up is outside the parent's goal, it must NOT be a child of
+  that parent.** Create it standalone, with no parent, and reference the origin
+  issue in its body.
+- The reason is mechanical: parent completion requires every child resolved. A
+  follow-up you have just described as "not part of this goal, needs a human
+  call on whether it is worth doing at all" may never be resolved — the honest
+  answer might be "no". Attach it as a child and the parent can never reach
+  `in_review`, so the goal is held hostage by work you already decided was out
+  of scope.
+- Only make it a child when it genuinely belongs to the parent's goal and you
+  intend it to be delivered as part of that goal.
 
 Parent issue completion:
 

@@ -59,11 +59,14 @@ Only the `Planner / Coordinator` may trigger `Reviewer`. One review run is one r
   fully specified. A supplied spec is input, not approval — the Coordinator
   still moves the parent to `prd_draft`, restates the spec plus the decisions
   it leaves open, and waits. No child issue may exist before that approval.
-- Authorization to open the Final PR.
-- Final PR review and merge, done on GitHub.
+- Final PR review and merge, done on GitHub. Note there is deliberately NO gate
+  in front of opening the Final PR: opening a PR is not merging one, and that
+  PR is the gate itself. Asking permission to create it is a gate in front of a
+  gate — a round-trip that buys nothing, since a human who disagrees can just
+  close it.
 - `done` is written by a human. Agents land at `in_review`.
 
-The Builder PR (`work_branch -> source_branch`) is an internal integration step. After Reviewer approval the `Planner / Coordinator` merges it where policy allows, and otherwise asks a human to merge and waits. Once the merge is done and the reviewed head is verified to be in `source_branch`, obtain human authorization to open the Final PR. The Final PR is the human review gate: agents open it, move the parent to `in_review`, and stop.
+The Builder PR (`work_branch -> source_branch`) is an internal integration step. After Reviewer approval the `Planner / Coordinator` merges it where policy allows, and otherwise asks a human to merge and waits. Once the merge is done and the reviewed head is verified to be in `source_branch`, the Coordinator opens the Final PR itself, then runs the mandatory final review against that PR. The Final PR is the human review gate: agents open it, review it, move the parent to `in_review`, and stop.
 
 ## Status Model
 
