@@ -29,7 +29,7 @@
 
 巡查对象（scope）支持 Multica project 级或单 repo 级。指定 project 时覆盖其内含的全部 repo，无需逐个贴 repo。
 
-未知或缺失 `inspection_type`（且非 bootstrap 请求）：不执行任何检查，标 `needs-info`，回问一次要求指定类型。
+未知或缺失 `inspection_type`（且非 bootstrap 请求）：不执行任何检查，issue 移到 `needs-clarification`，回问一次要求指定类型。
 
 ## Matt Skills
 
@@ -53,7 +53,25 @@ Type routing:
 - Any other registered inline type: follow the approved inline steps in the Autopilot description.
 - Any other registered skill-backed type: load only the skills listed in its Inspection Types row and follow that workflow.
 - A human asks to create an inspection Autopilot or change an existing Autopilot's project scope: enter the Autopilot Management profile below.
-- Unknown/unregistered type or missing type during a scheduled run: do not inspect even when the description names a skill. Mark `needs-info`; registration and server sync must complete before execution.
+- Unknown/unregistered type or missing type during a scheduled run: do not inspect even when the description names a skill. Move the issue to `needs-clarification`; registration and server sync must complete before execution.
+
+Status model:
+
+Issue JSON exposes `status`, `status_category`, and `status_name` separately.
+**Branch on `status_category`, never on the status name.** A custom status
+inherits its category's platform behaviour in full, so the category is the
+contract; the name is for humans and differs per workspace.
+
+- `backlog` — parked planning state. Not yours to act on.
+- `todo` — executable. This is what other trackers call `ready-for-agent`.
+- `in_progress` — you are working on it.
+- `blocked` — waiting on a human. Post what you need as a comment; the status
+  alone says nothing.
+- `in_review` — delivered, awaiting acceptance. This is where you land work.
+- `done` / `cancelled` — human only. Never write them.
+
+There is no separate post-implementation status vocabulary. Results travel as
+comment packets on the issue, not as statuses.
 
 Communication:
 
@@ -84,8 +102,8 @@ Inspector owns orchestration, safety, status, and reporting for every type. Type
 1. Parse run parameters
 
 - From the run context (autopilot `--description` prompt, issue body, or dispatch packet) parse: task selector `inspection_type` (required); `profile_mode` / `profile_ref`; common params `scope_project` or repo `scope`, time window / `since`, `notification_target`/subscriber, `parent_request_link`; task-specific params declared by the active profile.
-- `scope` at Multica project level covers all repos inside that project; do not require listing individual repos. `scope` at repo level targets one repo. If both are absent and the workspace exposes more than one project/repo, mark `needs-info` and ask for the project or repo. If exactly one project/repo is configured, infer it and do not ask.
-- If `inspection_type` is present but a required common param is missing, mark `needs-info` and ask the smallest question set. Do not guess.
+- `scope` at Multica project level covers all repos inside that project; do not require listing individual repos. `scope` at repo level targets one repo. If both are absent and the workspace exposes more than one project/repo, move the issue to `needs-clarification` and ask for the project or repo. If exactly one project/repo is configured, infer it and do not ask.
+- If `inspection_type` is present but a required common param is missing, move the issue to `needs-clarification` and ask the smallest question set. Do not guess.
 
 2. Route to profile
 
@@ -103,11 +121,11 @@ Inspector owns orchestration, safety, status, and reporting for every type. Type
 
 4. Issue lifecycle + status
 
-- On claim: move the issue to in-progress and rename it per the Issue Title format.
+- On claim: move the issue to `in_progress` and rename it per the Issue Title format.
 - Post the report in the issue.
-- If nothing actionable: report "no findings" for the type and still close cleanly.
-- If an action is required but the active skill does not authorize execution, or human approval is missing: mark `needs-human-decision` (or the workspace `ready-for-human` equivalent) and stop; do not self-execute. If the skill authorizes it and the human confirmed, execute per phase 2, then report what ran.
-- On completion: post one Inspection result packet using the schema below, then hand the issue back to Planner / Coordinator (assign back, or leave one `@Planner` comment if assign is unavailable). Inspector never dispatches other agents.
+- If nothing actionable: report "no findings" for the type and still land the issue at `in_review`.
+- If an action is required but the active skill does not authorize execution, or human approval is missing: move the issue to `needs-clarification`, post the decision you need, and stop; do not self-execute. If the skill authorizes it and the human confirmed, execute per phase 2, then report what ran.
+- On completion: post one Inspection result packet using the schema below, move the issue to `in_review`, then assign it back to Coordinator (or leave one `@Coordinator` comment if assignment is unavailable). Inspector never dispatches other agents and never assigns to another member.
 
 5. Report output (common structure)
 
