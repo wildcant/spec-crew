@@ -57,7 +57,8 @@ Every behavioural change belongs in `agents/*.md`.
 
 | Agent | Job | Matt skills | Workspace skills |
 |---|---|---|---|
-| [Coordinator](agents/planner-coordinator.md) | The only dispatcher. Clarification, PRD, slicing, triage, dispatch. | `grilling`, `to-spec`, `to-tickets`, `triage` | `branch-pr-safety` |
+| [Planner](agents/planner.md) | Requirement clarification, PRD, architectural decisions, vertical-slice issue creation. | `grilling`, `to-spec`, `to-tickets` | — |
+| [Coordinator](agents/coordinator.md) | The only dispatcher. Triage, dispatch, review orchestration, Final PR. | `triage` | `branch-pr-safety` |
 | [Builder](agents/builder.md) | Implements issues in `todo`. Small steps, tests first. | `codebase-design`, `diagnosing-bugs`, `resolving-merge-conflicts`, `tdd` | `branch-pr-safety` |
 | [Reviewer](agents/reviewer.md) | Reviews Builder output. Bugs, regressions, missing tests, risk. | `code-review`, `tdd` | `branch-pr-safety` |
 | [Inspector](agents/inspector.md) | Routed inspections by `inspection_type`. Reports and proposals. | `grill-with-docs`, `handoff`, `writing-for-agents` | — |

@@ -20,18 +20,26 @@ cd "$ROOT"
 
 # ---------------------------------------------------------------- config ----
 
+# Runtime selection is provider-aware. These optional IDs disambiguate when a
+# workspace has multiple runtimes for the same provider. RUNTIME_ID remains a
+# fallback for model families the script does not recognize.
 RUNTIME_ID="${RUNTIME_ID:-}"
+RUNTIME_CLAUDE_ID="${RUNTIME_CLAUDE_ID:-}"
+RUNTIME_CODEX_ID="${RUNTIME_CODEX_ID:-}"
+RUNTIME_ANTIGRAVITY_ID="${RUNTIME_ANTIGRAVITY_ID:-}"
 SQUAD_NAME="${SQUAD_NAME:-spec-crew}"
 
-MODEL_COORDINATOR="${MODEL_COORDINATOR:-claude-opus-5}"
-MODEL_BUILDER="${MODEL_BUILDER:-claude-opus-5}"
-MODEL_REVIEWER="${MODEL_REVIEWER:-claude-opus-5}"
-MODEL_INSPECTOR="${MODEL_INSPECTOR:-claude-haiku-4-5}"
+MODEL_PLANNER="${MODEL_PLANNER:-claude-opus-4-6}"
+MODEL_COORDINATOR="${MODEL_COORDINATOR:-claude-haiku-4-5-20251001}"
+MODEL_BUILDER="${MODEL_BUILDER:-claude-opus-4-6}"
+MODEL_REVIEWER="${MODEL_REVIEWER:-gpt-5.6-sol}"
+MODEL_INSPECTOR="${MODEL_INSPECTOR:-gemini-3.1-flash}"
 
-THINKING_COORDINATOR="${THINKING_COORDINATOR:-xhigh}"
-THINKING_BUILDER="${THINKING_BUILDER:-xhigh}"
-THINKING_REVIEWER="${THINKING_REVIEWER:-high}"
-THINKING_INSPECTOR="${THINKING_INSPECTOR:-low}"
+THINKING_PLANNER="${THINKING_PLANNER:-xhigh}"
+THINKING_COORDINATOR="${THINKING_COORDINATOR:-medium}"
+THINKING_BUILDER="${THINKING_BUILDER:-medium}"
+THINKING_REVIEWER="${THINKING_REVIEWER:-low}"
+THINKING_INSPECTOR="${THINKING_INSPECTOR:-none}"
 
 # Repositories to register, space separated. Empty = skip.
 REPOS="${REPOS:-}"
@@ -60,6 +68,56 @@ touch "$STATE" 2>/dev/null || true
 remember() { printf '%s\t%s\n' "$1" "$2" >> "$STATE"; }
 recall()   { [[ -f "$STATE" ]] && awk -F'\t' -v k="$1" '$1==k{v=$2} END{print v}' "$STATE" || true; }
 
+# Runtimes are concrete provider/tool pairings, not generic computers. Pick the
+# provider from the model family, then select a runtime belonging to it.
+RUNTIME_ROWS=""
+load_runtime_rows() {
+  RUNTIME_ROWS="$(multica runtime list --output json | python3 -c '
+import sys, json
+for r in json.load(sys.stdin):
+    print("%s\t%s\t%s\t%s" % (
+        r.get("id", ""), r.get("provider", ""), r.get("status", ""), r.get("name", "")))
+')"
+  [[ -n "$RUNTIME_ROWS" ]] || die "no runtimes in this workspace. Start the daemon: multica daemon start"
+}
+
+runtime_for_provider() {
+  local provider="$1" override="$2" rows count
+
+  if [[ -n "$override" ]]; then
+    rows="$(printf '%s\n' "$RUNTIME_ROWS" | awk -F'\t' -v id="$override" -v p="$provider" '$1==id && $2==p')"
+    [[ -n "$rows" ]] || die "$override is not a $provider runtime in this workspace"
+    printf '%s' "$override"
+    return
+  fi
+
+  rows="$(printf '%s\n' "$RUNTIME_ROWS" | awk -F'\t' -v p="$provider" '$2==p && $3=="online"')"
+  [[ -n "$rows" ]] || rows="$(printf '%s\n' "$RUNTIME_ROWS" | awk -F'\t' -v p="$provider" '$2==p')"
+  count="$(printf '%s\n' "$rows" | awk 'NF{n++} END{print n+0}')"
+  if [[ "$count" == "0" ]]; then
+    die "no $provider runtime found. Install/sign in to that tool, then run: multica daemon restart"
+  elif [[ "$count" != "1" ]]; then
+    warn "multiple $provider runtimes found:"
+    printf '%s\n' "$rows" | awk -F'\t' '{printf "  %s  %s  (%s)\n", $1, $4, $3}' >&2
+    die "choose one with RUNTIME_$(printf '%s' "$provider" | tr '[:lower:]' '[:upper:]')_ID=<id>"
+  fi
+  printf '%s' "$rows" | awk -F'\t' 'NR==1{print $1}'
+}
+
+runtime_for_model() {
+  local model="$1"
+  case "$model" in
+    claude-*)                 runtime_for_provider claude "$RUNTIME_CLAUDE_ID" ;;
+    gpt-5.6-sol|gpt-5.6-terra|codex-*|openai/*)
+                              runtime_for_provider codex "$RUNTIME_CODEX_ID" ;;
+    gemini-*)                 runtime_for_provider antigravity "$RUNTIME_ANTIGRAVITY_ID" ;;
+    *)
+      [[ -n "$RUNTIME_ID" ]] || die "cannot infer a runtime provider from model '$model'; set RUNTIME_ID"
+      printf '%s' "$RUNTIME_ID"
+      ;;
+  esac
+}
+
 # ------------------------------------------------------------- preflight ----
 
 if phase preflight; then
@@ -74,24 +132,14 @@ if phase preflight; then
   WS_NAME="$(multica workspace get --output json | json_get name)"
   ok "workspace: $WS_NAME"
 
-  if [[ -z "$RUNTIME_ID" ]]; then
-    RUNTIME_ID="$(multica runtime list --output json | python3 -c '
-import sys, json
-rts = json.load(sys.stdin)
-pool = [r for r in rts if r.get("status") == "online"] or rts
-if not pool:
-    sys.exit("no runtimes in this workspace. Start the daemon: multica daemon start")
-if len(pool) > 1:
-    lines = ["  %s  %s  (%s)" % (r["id"], r.get("name",""), r.get("status")) for r in pool]
-    sys.exit("%d runtimes found — choose one and re-run with RUNTIME_ID=<id>:\n%s"
-             % (len(pool), "\n".join(lines)))
-print(pool[0]["id"])
-')" || die "$(cat)"
-  fi
-  ok "runtime: $RUNTIME_ID"
-  remember RUNTIME_ID "$RUNTIME_ID"
+  load_runtime_rows
+  for model_var in MODEL_PLANNER MODEL_COORDINATOR MODEL_BUILDER MODEL_REVIEWER MODEL_INSPECTOR; do
+    model="$(eval printf '%s' "\"\${$model_var}\"")"
+    runtime_id="$(runtime_for_model "$model")"
+    provider="$(printf '%s\n' "$RUNTIME_ROWS" | awk -F'\t' -v id="$runtime_id" '$1==id{print $2; exit}')"
+    ok "$model: $provider runtime $runtime_id"
+  done
 fi
-[[ -n "$RUNTIME_ID" ]] || RUNTIME_ID="$(recall RUNTIME_ID)"
 
 # ---------------------------------------------------------------- repos -----
 
@@ -193,8 +241,9 @@ fi
 
 if phase agents; then
   step "Agents"
+  [[ -n "$RUNTIME_ROWS" ]] || load_runtime_rows
   SKILL_ROWS="$(multica skill list --output json | json_rows skills)"
-  AGENT_ROWS="$(multica agent list --output json | json_rows agents)"
+  AGENT_ROWS="$(multica agent list --include-archived --output json | json_rows agents)"
 
   skill_ids_for() {
     local want ids="" id
@@ -210,6 +259,11 @@ if phase agents; then
     case "$name" in ''|\#*) continue ;; esac
     model="$(eval printf '%s' "\"\${$model_var}\"")"
     thinking="$(eval printf '%s' "\"\${$thinking_var}\"")"
+    runtime_id="$(runtime_for_model "$model")"
+    thinking_args=()
+    if [[ "$thinking" != "none" && -n "$thinking" ]]; then
+      thinking_args=(--thinking-level "$thinking")
+    fi
 
     payload="$(extract_instructions "$file")"
     if [[ -n "$STATUS_PAIRS" ]]; then
@@ -218,27 +272,51 @@ if phase agents; then
 
     existing="$(printf '%s\n' "$AGENT_ROWS" | awk -F'\t' -v n="$name" '$2==n{print $1; exit}')"
     if [[ -n "$existing" ]]; then
+      if multica agent get "$existing" --output json 2>/dev/null | grep -q '"archived_at": "[^"]'; then
+        info "restoring archived $name ($existing)"
+        run multica agent restore "$existing" >/dev/null
+      fi
       info "updating $name ($existing)"
       run multica agent update "$existing" \
         --instructions "$payload" \
-        --description "spec-crew $name. Instruction version: $version" >/dev/null
+        --description "spec-crew $name. Instruction version: $version" \
+        --runtime-id "$runtime_id" \
+        --model "$model" ${thinking_args[@]+"${thinking_args[@]}"} >/dev/null
       agent_id="$existing"
     else
       info "creating $name (${#payload} chars of instructions, model $model)"
       if [[ "$DRY_RUN" == "1" ]]; then
         agent_id="dry-run-$name"
-        run multica agent create --name "$name" --runtime-id "$RUNTIME_ID" \
+        run multica agent create --name "$name" --runtime-id "$runtime_id" \
           --instructions "<${#payload} chars from $file>" \
           --description "spec-crew $name. Instruction version: $version" \
-          --model "$model" --thinking-level "$thinking" \
+          --model "$model" ${thinking_args[@]+"${thinking_args[@]}"} \
           --max-concurrent-tasks 1 --permission-mode public_to --public-to-workspace
       else
-        agent_id="$(multica agent create --name "$name" --runtime-id "$RUNTIME_ID" \
+        create_out="$(multica agent create --name "$name" --runtime-id "$runtime_id" \
           --instructions "$payload" \
           --description "spec-crew $name. Instruction version: $version" \
-          --model "$model" --thinking-level "$thinking" \
+          --model "$model" ${thinking_args[@]+"${thinking_args[@]}"} \
           --max-concurrent-tasks 1 --permission-mode public_to --public-to-workspace \
-          --output json | json_get id)"
+          --output json 2>&1)" && agent_id="$(printf '%s' "$create_out" | json_get id)" || {
+          warn "  create failed for $name, looking up existing agent to update"
+          agent_id="$(multica agent list --include-archived --output json | json_rows agents \
+            | awk -F'\t' -v n="$name" '$2==n{print $1; exit}')"
+          if [[ -n "$agent_id" ]]; then
+            if multica agent get "$agent_id" --output json 2>/dev/null | grep -q '"archived_at": "[^"]'; then
+              info "  restoring archived $name ($agent_id)"
+              multica agent restore "$agent_id" >/dev/null
+            fi
+            info "  updating $name ($agent_id)"
+            multica agent update "$agent_id" \
+              --instructions "$payload" \
+              --description "spec-crew $name. Instruction version: $version" \
+              --runtime-id "$runtime_id" \
+              --model "$model" ${thinking_args[@]+"${thinking_args[@]}"} >/dev/null
+          else
+            die "could not create or find agent $name"
+          fi
+        }
       fi
     fi
     remember "agent:$name" "$agent_id"

@@ -14,7 +14,7 @@ skipped, and existing agents and squads are updated rather than duplicated.
 
 | Phase | Creates | CLI-able |
 |---|---|---|
-| `preflight` | — verifies CLI, auth, workspace, runtime; registers repos | yes |
+| `preflight` | — verifies CLI, auth, workspace, provider runtimes; registers repos | yes |
 | `skills` | 12 Matt skills + 2 workspace skills | yes |
 | `statuses` | — verifies and maps; cannot create | **no** |
 | `agents` | Coordinator, Builder, Reviewer, Inspector + skill bindings | yes |
@@ -91,28 +91,32 @@ Everything is an environment variable; nothing needs the script edited.
 
 | Variable | Default | |
 |---|---|---|
-| `RUNTIME_ID` | auto-detected | Required if the workspace has more than one runtime |
+| `RUNTIME_CLAUDE_ID` | auto-detected by provider | Required only with multiple Claude runtimes |
+| `RUNTIME_CODEX_ID` | auto-detected by provider | Required only with multiple Codex runtimes |
+| `RUNTIME_ANTIGRAVITY_ID` | auto-detected by provider | Required only with multiple Antigravity runtimes |
+| `RUNTIME_ID` | — | Fallback for an unrecognized model family |
 | `SQUAD_NAME` | `spec-crew` | |
 | `STATUS_MAP` | — | `canonical=actual,...` |
 | `REPOS` | — | Space-separated repo URLs to register |
-| `MODEL_COORDINATOR` | `claude-opus-5` | reasoning-tier model |
+| `MODEL_PLANNER` | `claude-opus-4-6` | planning model; selects Claude runtime |
+| `MODEL_COORDINATOR` | `gpt-5.6-terra` | selects Codex runtime |
 | `MODEL_BUILDER` | `claude-opus-5` | coding-tier model |
-| `MODEL_REVIEWER` | `claude-opus-5` | reasoning-tier model |
-| `MODEL_INSPECTOR` | `claude-haiku-4-5` | cheap tier; 200K context, no effort support |
-| `THINKING_COORDINATOR` | `xhigh` | effort, `low`–`max` |
-| `THINKING_BUILDER` | `xhigh` | effort, `low`–`max` |
-| `THINKING_REVIEWER` | `high` | effort, `low`–`max` |
-| `THINKING_INSPECTOR` | `low` | effort; Haiku 4.5 may reject it entirely |
+| `MODEL_REVIEWER` | `gpt-5.6-sol` | selects Codex runtime |
+| `MODEL_INSPECTOR` | `gemini-3.1-flash` | selects Antigravity runtime |
+| `THINKING_PLANNER` | `xhigh` | effort, `low`–`max` |
+| `THINKING_COORDINATOR` | `medium` | effort, runtime/model-specific |
+| `THINKING_BUILDER` | `medium` | effort, runtime/model-specific |
+| `THINKING_REVIEWER` | `medium` | effort, runtime/model-specific |
+| `THINKING_INSPECTOR` | `none` | omit the effort flag |
 | `CREATE_AUTOPILOT` | `0` | `1` creates the scheduled inspection |
 | `AUTOPILOT_CRON` | `0 9 * * 1` | |
 
-Builder runs at `xhigh` because that is the recommended effort for coding and
-agentic work, and because a weak implementation costs a Reviewer round plus a
-review-fix round. Higher effort does pull the model toward unrequested tidying
-and refactoring. If that shows up in Builder PRs, sharpen the scope boundary in
-[`agents/builder.md`](../agents/builder.md) — "structural decisions beyond the
-issue scope are blockers" — rather than dropping the effort back down. The
-scope contract is the right lever; effort is not.
+The bootstrap maps model families to runtime providers: Claude models use a
+Claude runtime, `gpt-5.6-sol` and `gpt-5.6-terra` use a Codex runtime, and
+Gemini models use an Antigravity runtime. A model name never changes the
+runtime by itself; the script passes the resolved provider-specific
+`--runtime-id` on every agent create and update. If a provider has multiple
+runtimes, set its `RUNTIME_*_ID` explicitly.
 
 Which skills exist and which agent binds them is data, not code:
 [`skills.txt`](skills.txt) and [`agents.txt`](agents.txt).

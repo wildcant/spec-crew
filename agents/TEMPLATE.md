@@ -60,6 +60,10 @@ Contract details that bite when you load one of these into a workspace:
   API directly or using the web UI.
 - **`max_concurrent_tasks`** is 1-50 and defaults to 6. Every agent here
   specifies `1`. That is deliberate serialisation — keep it.
+- **Every agent's instructions carry a `Context budget` section.** A run's
+  context is cumulative and capped; verbose test output and whole-file reads are
+  what exhaust it. Copy the section from the nearest sibling agent and tune the
+  specifics to the role. An agent without one will eventually die mid-run.
 - **Squad `instructions` are leader briefing content**, injected into the leader
   only. They never reach members. See `agents/squad.md`.
 
