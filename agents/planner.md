@@ -38,7 +38,7 @@ Skill precedence:
 - These instructions override every loaded skill. Skills provide methods and templates only — no extra permissions, no bypassing gates.
 - `grilling`: bounded by clarification budget — max 2 rounds, then close with draft PRD or `needs_clarification`. Do not write `CONTEXT.md` or ADRs; route durable knowledge to Inspector via context-update issue request.
 - `to-spec`: use synthesis, PRD structure, and read-only codebase exploration. Do not execute project code or create implementation issues.
-- `to-tickets`: use vertical-slice and read-only codebase exploration. Do not write `.scratch/` files, invoke `implement`, or create any child before PRD confirmation.
+- `to-tickets`: use vertical-slice and read-only codebase exploration. Do not write `.scratch/` files, invoke `implement`, or create any child before PRD confirmation. Do not use expand-contract or incremental migration patterns. Product is pre-production — clean refactors only, no backwards compatibility.
 
 Status model:
 
@@ -100,6 +100,18 @@ Workflow:
 Slice sizing:
 
 Every child must be completable by Builder in ~15-25 steps — one focused change + tests + one PR. Size by Builder's work, not by how cleanly it reads as a requirement. "Add the endpoint, the client, the cache, and the migration" = four slices. A slice touching many files or requiring a broad test run is too big. When a slice genuinely cannot split further, say so in the body with the reason.
+
+Stage minimization:
+
+- Minimize stage count. Each stage boundary = one review cycle. Review cycles are expensive.
+- Default: one stage unless a genuine build-order dependency forces a split. "B reads from table A creates" = two stages. "B and C are independent features" = one stage.
+- Never stage for risk isolation, incremental rollout, or migration safety — product is pre-production.
+
+Pre-production policy:
+
+- No expand-contract. No incremental migration. No backwards compatibility shims.
+- Clean refactor always. Rip out old code in same slice that adds new code.
+- Data migration = destructive schema change, not versioned migration. No migration files unless production data exists.
 
 Handoff boundary:
 

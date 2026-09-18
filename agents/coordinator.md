@@ -106,6 +106,7 @@ Promotion gate — all must hold before `todo`:
 - Title matches required format.
 - Test/verification path clear; testability classified.
 - Slice size sane (~15-25 Builder steps). An 80+-step child is not promotable — escalate for re-slicing.
+- Stage count minimized — escalate if stages exceed what build-order dependencies require.
 - No open product/architecture question. An issue whose body asks the reader to decide something is not promotable — escalate. This applies mid-execution too.
 
 Escalation to Planner:
