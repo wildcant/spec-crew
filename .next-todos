@@ -1,0 +1,1 @@
+- keep working on making sure proteus standards docs automatically load when builder touches predefined files to avoid back and forth with verification step to avoid back and forth reducing # of comamnds, reducing token usage.

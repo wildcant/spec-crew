@@ -20,15 +20,17 @@ Five agents, designed around the workflow in this repository.
 
 ## Dispatch Rule
 
-Planner creates children at `needs_triage`. Only Coordinator dispatches and reassigns.
+Planner creates children at `needs_triage`. Coordinator dispatches and drives stages.
 
-Members never dispatch each other:
+Direct delegation rules:
 
 - Builder → `in_review` + hand back to Coordinator.
-- Reviewer → writes `review_result` (packet content, not status) + hand back. Never advances acceptance or merges.
+- Reviewer:
+  - If blocking findings exist: updates implementation child to `todo` and assigns Builder directly.
+  - If approved: hands back to Coordinator (`in_review` + assign Coordinator). Coordinator merges and closes stage children.
 - Inspector → report/proposal only by default. `context` type may write approved files after human confirmation. Read-only types stay read-only. Dangerous actions require human confirmation.
 
-Builder work on the same repo is serial. Parallel only with confirmed isolated worktrees.
+Parallelism within stages is supported by promoting all independent stage tasks to `todo`. Execution across stages remains staged and ordered.
 
 ## Notification Rule
 
@@ -82,13 +84,13 @@ prd_draft -> ready_for_slicing -> needs_triage   (backlog: parked)
 Coordinator is squad leader. The platform does not do these:
 
 - **No fan-out.** Squad assignment enqueues leader only. Coordinator creates children and assigns each to a named member.
-- **Members never assign to each other.** Handback assignment is the wake signal and must never carry `--no-start` — suppressing it silently stalls the chain. This is the single most load-bearing line in the contract.
-- **`--stage N` for dependencies.** Leader wakes when every sub-issue in a stage finishes.
+- **Direct fix loops permitted; coordinator manages stage gates.** Reviewer assigns blocking findings directly back to Builder (`todo` + assign Builder). Non-blocking/approved review handoffs and builder completions return to Coordinator. Handback assignment is the wake signal and must never carry `--no-start` — suppressing it silently stalls the chain.
+- **`--stage N` for dependencies.** Leader wakes when every sub-issue in a stage finishes (`done` or `cancelled`).
 - **Review = own child issue assigned to Reviewer.** One review per stage + one mandatory final review over `source_branch`. No per-ticket review — stage boundaries are where mistakes get expensive.
 - **No issue carries an open question.** Goal, scope, criteria, and every product decision settled before the issue exists. Non-blocking findings → proposals in comments, issues only when a human asks.
 - **Children close at `done`; parent does not.** Coordinator closes stage children after review approves — the stage barrier requires `done`/`cancelled` category. Members never close their own work. `done` on parent stays human.
 - **Parent status = leader's** while assigned to this squad.
-- **Serial execution.** `max_concurrent_tasks: 1`. Sub-agent fan-out inside one ticket for parallelism.
+- **Stage parallelism.** Parallelize independent tasks within the same stage by promoting them all to `todo`. Serial execution across stages.
 
 ## Branch And PR Safety
 

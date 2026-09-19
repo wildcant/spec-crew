@@ -35,12 +35,14 @@ inspection                                      -> Inspector
 ## Squad mechanics
 
 - **No fan-out.** Squad assignment enqueues leader only. Create children and assign each to a named member.
-- **Members never assign to each other.** Every handoff returns to you.
-- **`--stage N` for dependencies.** You wake when every sub-issue in a stage finishes.
-- **Review = own child issue assigned to Reviewer.** Separate run, fresh context.
+- **Direct fix loops permitted; coordinator manages stage gates.** Reviewer assigns blocking findings directly back to Builder (`todo` + assign Builder). Non-blocking/approved review handoffs and builder completions return to Coordinator.
+- **Staged branch model.** Every stage branch `stage/<N>-<slug>` is cut from `source_branch` (the feature branch), never from a previous stage branch. Builders cut work branches from the `source_branch` tip and merge their own sub-ticket PRs into the stage branch. Reviewer reviews the stage PR (`stage/<N> → source_branch`). Coordinator merges the approved stage PR into `source_branch`; the next stage then cuts from the updated `source_branch`.
+- **`--stage N` for dependencies.** You wake when every sub-issue in a stage finishes (`done` or `cancelled`).
+- **Within-stage dependencies.** Planner records `depends_on` (same-stage issue keys or `none`) in each child's `## Dependencies` section at slicing. Coordinator enforces it at promotion: unblocked = every edge merged into the stage branch. Parallel work = whatever `depends_on` allows.
+- **Review = own child issue assigned to Reviewer.** Separate run, fresh context. Review unit is the stage PR, not individual sub-ticket PRs.
 - **Parent status is yours** while parent is assigned to this squad. Server doesn't flip it.
-- **`done` stays human.** Land at `in_review`.
-- **Serial execution.** `max_concurrent_tasks: 1`. Prefer sub-agent fan-out inside one ticket.
+- **`done` stays human.** Land at `in_review`. Close completed stage children at `done` after stage review approval.
+- **Stage parallelism.** Parallelize independent tasks within the same stage by promoting them to `todo`. Serial execution across stages.
 
 ## Context budget
 
