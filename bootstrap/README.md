@@ -17,7 +17,7 @@ skipped, and existing agents and squads are updated rather than duplicated.
 | `preflight` | — verifies CLI, auth, workspace, provider runtimes; registers repos | yes |
 | `skills` | 12 Matt skills + 2 workspace skills | yes |
 | `statuses` | — verifies and maps; cannot create | **no** |
-| `agents` | Coordinator, Builder, Reviewer, Inspector + skill bindings | yes |
+| `agents` | Planner, Coordinator, Builder, Reviewer, Inspector + skill bindings | yes |
 | `squad` | the squad, its leader instructions, its members | yes |
 | `autopilot` | Inspector's scheduled inspection (opt-in) | yes |
 | `verify` | — reports what ended up bound | yes |
@@ -28,9 +28,11 @@ Run one phase with `--only <phase>`.
 
 Six things, and only three of them have a CLI.
 
-1. **The squad.** Four agents with no leader are inert. `squad create` has no
-   `--instructions` flag, so it is a create-then-update, and squad instructions
-   reach the **leader only** — members never see them.
+1. **The squad.** Five agents; four squad members. Planner is a workspace agent,
+   not added to the squad — Coordinator wakes it by parent status. Four members
+   with no leader are inert. `squad create` has no `--instructions` flag, so it
+   is a create-then-update, and squad instructions reach the **leader only** —
+   members never see them.
 2. **Skill bindings.** `agent create` does *not* bind skills, even though the
    HTTP body accepts `skill_ids`. Separate call, separate failure mode.
 3. **Repositories.** `multica repo add <url>`. Set `REPOS=` to register them.

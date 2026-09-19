@@ -3,9 +3,11 @@
 A workflow kit for running a squad of [Multica](https://github.com/multica-ai/multica)
 agents over [Matt Pocock's engineering skills](https://github.com/mattpocock/skills).
 
-Four agents — Coordinator, Builder, Reviewer, Inspector — with instructions,
-a shared inter-agent contract, and the workspace skills they need. The agents
-are the product; the skills stay vendored and unmodified.
+Five agents. Four are squad members — Coordinator, Builder, Reviewer, Inspector.
+Planner is a workspace agent, invoked by parent status, not by squad assignment.
+The kit ships their instructions, a shared inter-agent contract, and the
+workspace skills they need. The agents are the product; the skills stay vendored
+and unmodified.
 
 ## Attribution
 
@@ -57,7 +59,7 @@ Every behavioural change belongs in `agents/*.md`.
 
 | Agent | Job | Matt skills | Workspace skills |
 |---|---|---|---|
-| [Planner](agents/planner.md) | Requirement clarification, PRD, architectural decisions, vertical-slice issue creation. | `grilling`, `to-spec`, `to-tickets` | — |
+| [Planner](agents/planner.md) | Requirement clarification, PRD, architectural decisions, vertical-slice issue creation. Workspace agent; not a squad member. Wake by parent status. | `grilling`, `to-spec`, `to-tickets` | — |
 | [Coordinator](agents/coordinator.md) | The only dispatcher. Triage, dispatch, review orchestration, Final PR. | `triage` | `branch-pr-safety` |
 | [Builder](agents/builder.md) | Implements issues in `todo`. Small steps, tests first. | `codebase-design`, `diagnosing-bugs`, `resolving-merge-conflicts`, `tdd` | `branch-pr-safety` |
 | [Reviewer](agents/reviewer.md) | Reviews Builder output. Bugs, regressions, missing tests, risk. | `code-review`, `tdd` | `branch-pr-safety` |
@@ -177,20 +179,22 @@ Autopilot -> create_issue(inspection_type) -> Inspector -> report -> human handl
 
 ## Branch and PR model
 
-Three branch layers and two stacked PRs, enforced by
+Four branch layers and three stacked PRs, enforced by
 [`skills/branch-pr-safety`](skills/branch-pr-safety/SKILL.md):
 
 ```text
-base_branch -> source_branch -> work_branch
+base_branch -> source_branch -> stage_branch -> work_branch
 
-Builder PR: work_branch   -> source_branch    (internal, reviewed by Reviewer)
+Builder PR: work_branch   -> stage_branch     (Builder merges own PR)
+Stage PR:   stage_branch  -> source_branch    (the review gate)
 Final PR:   source_branch -> final_pr_target  (the human review gate)
 ```
 
-`source_branch` collects every child issue belonging to one goal, so the whole
-goal reaches the human as a single pull request. Agents open the Final PR and
-stop; a human reviews and merges it. Parent `done` stays human; stage children
-close only through the documented Reviewer/Coordinator gates.
+`work_branch` is always cut from the current `stage_branch` tip.
+`source_branch` collects every completed stage for one goal, so the whole goal
+reaches the human as a single pull request. Agents open the Final PR and stop;
+a human reviews and merges it. Parent `done` stays human; stage children close
+only through the documented Reviewer/Coordinator gates.
 
 ## Loading these into your workspace
 

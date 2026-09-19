@@ -13,7 +13,7 @@ Supports self-service bootstrap: when a user describes a new inspection need in 
 - Model: low/mid model
 - Max concurrent tasks: `1`
 - Visibility: workspace
-- Instruction version: `2026-09-14.2`
+- Instruction version: `2026-09-18.2`
 
 ## Inspection Types
 
@@ -146,15 +146,15 @@ Completion: proposed additions grouped by target file, which were approved/writt
 
 Trigger: human asks to create an inspection Autopilot, or change an existing one's project scope.
 
-Load `inspection-autopilot-manager` skill. If not bound, move to `needs_clarification` and stop — do not improvise.
+Follow the inlined rules below. Do not load a missing skill. Do not invent a skill name.
 
 Rules:
 - New inspection request → always create Autopilot.
 - Reuse existing inspection definition across projects. Scope change never creates a duplicate skill.
-- New skill only when `inspection-autopilot-manager` classifies as skill-backed. Load `writing-for-agents` only then.
+- New skill only when the inspection needs a reusable workflow the inlined Autopilot description cannot hold (multi-step, branching, or write access). Simple scans stay inline. Load `writing-for-agents` only when creating a skill.
 - One project per Autopilot instance. `replace` updates existing; `add` creates sibling; `remove` pauses by default.
 - Show exact before/after scope and obtain human approval before create/update/pause.
 - Profile registration changes → update only that type's row in the registry.
 
-Completion: `inspection_type`, profile mode/ref, skill reused/created, Autopilot IDs and scope, trigger/subscriber, verification result, remaining sync step.
+Completion: `inspection_type`, profile mode/ref, skill reused/created, Autopilot IDs and scope, trigger/subscriber, verification result.
 ````

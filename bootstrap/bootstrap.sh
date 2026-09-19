@@ -349,7 +349,7 @@ if phase squad; then
       run multica squad create --name "$SQUAD_NAME" --leader "$COORDINATOR_ID" --description "..."
     else
       SQUAD_ID="$(multica squad create --name "$SQUAD_NAME" --leader "$COORDINATOR_ID" \
-        --description "Coordinator plans and dispatches; Builder implements; Reviewer reviews; Inspector inspects." \
+        --description "Coordinator dispatches. Squad members: Builder, Reviewer, Inspector. Planner is a workspace agent woken by parent status." \
         --output json | json_get id)"
     fi
   fi

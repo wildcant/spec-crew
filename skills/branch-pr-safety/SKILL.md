@@ -1,6 +1,6 @@
 ---
 name: branch-pr-safety
-description: Enforce safe branch and pull-request workflow for Coordinator, Builder, and Reviewer. Use whenever creating implementation issues, creating branches, opening PRs, reviewing PRs, or deciding PR targets.
+description: Enforce the staged branch and pull-request workflow for Coordinator, Builder, and Reviewer. Use whenever creating implementation issues, creating branches, opening PRs, reviewing PRs, or deciding PR targets.
 ---
 
 # Branch PR Safety
@@ -9,36 +9,35 @@ Use this skill for any branch or PR operation.
 
 ## Branch Model
 
-All implementation work uses three layers:
+All implementation work uses four layers:
 
 ```text
-base_branch -> source_branch -> work_branch
+base_branch -> source_branch -> stage_branch -> work_branch
 ```
 
 - `base_branch`: baseline branch. Default: `main`.
-- `source_branch`: feature or hotfix branch that collects the work for one goal.
-- `work_branch`: Builder-owned branch where code changes happen.
+- `source_branch`: feature or hotfix branch that collects every completed stage for one goal.
+- `stage_branch`: per-stage integration branch. Cut from `source_branch` at stage start. Never cut from a previous stage branch.
+- `work_branch`: Builder-owned branch. Cut from the current `stage_branch` tip so already-merged sibling work exists.
 
-PRs are stacked in two stages:
+PRs are stacked in three layers:
 
 ```text
-Builder PR: work_branch   -> source_branch
-Final PR:   source_branch -> final_pr_target
+Builder PR: work_branch   -> stage_branch     (Builder merges own PR)
+Stage PR:   stage_branch  -> source_branch    (the review gate)
+Final PR:   source_branch -> final_pr_target  (the human gate)
 ```
 
-Why two stages and not one: `source_branch` collects every child issue that
-belongs to the same goal. The Builder PR is an internal integration step,
-reviewed by the Reviewer agent on its own issue. The Final PR is the single
-human-facing pull request for the whole goal.
+Why three layers: `source_branch` collects the whole goal for one human-facing PR. Review happens once per stage on the stage PR, not on each sub-ticket PR. Sub-ticket PRs merge into `stage_branch` without an individual Reviewer pass; nothing reaches `source_branch` unreviewed.
 
-- `builder_pr_target` must equal `source_branch`.
-- `final_pr_target` is the branch the completed goal lands on. Default:
-  `base_branch`. Workspaces that deploy from a dedicated branch set it to that
-  branch instead.
-- Builder creates only the Builder PR.
-- Coordinator or a human creates the Final PR after internal review and human
-  authorisation.
+**Invariant: a stage branch is always cut from `source_branch`, never from a previous stage branch.** Stage N+1 sees stage N work only because the stage N PR was merged into `source_branch` first.
+
+- `builder_pr_target` must equal `stage_branch`.
+- `final_pr_target` is the branch the completed goal lands on. Default: `base_branch`. Workspaces that deploy from a dedicated branch set it to that branch instead.
+- Builder creates only the Builder PR, then merges that PR into `stage_branch`.
+- Coordinator creates the stage PR at stage start and the Final PR after the last stage merges.
 - Nobody merges the Final PR except a human.
+- Nobody merges a stage PR except Coordinator, and only after Reviewer approval with `review_head_ref` still equal to the stage branch tip.
 
 ## Required Issue Fields
 
@@ -51,6 +50,7 @@ source_branch:
 source_branch_status:
 issue_key:
 work_branch:
+stage_branch:
 builder_pr_target:
 final_pr_target:
 ```
@@ -70,9 +70,10 @@ address in that case.
 Allowed `source_branch_status` values:
 
 - `create_if_missing`: new feature or hotfix branch. If remote `source_branch`
-  does not exist, Builder must create it from latest `base_branch`.
+  does not exist at stage-1 start, Coordinator creates it from latest
+  `base_branch`.
 - `must_exist`: existing integration, feature, or hotfix branch. If remote
-  `source_branch` does not exist, Builder must stop and report a blocker.
+  `source_branch` does not exist, Coordinator stops and reports a blocker.
 
 ## Visibility Rules
 
@@ -82,7 +83,7 @@ Branch/PR fields are internal control-plane data.
 - Builder must use them to create branches and PRs safely.
 - Reviewer must use them to verify branch and PR safety.
 - Normal user-facing summaries should not list `base_branch`, `source_branch`,
-  `source_branch_status`, `work_branch`, `builder_pr_target`, or
+  `source_branch_status`, `stage_branch`, `work_branch`, `builder_pr_target`, or
   `final_pr_target`.
 - User-facing summaries may say `Branch safety checked`.
 - Show detailed branch/PR fields only when the user asks, a blocker occurs, a
@@ -104,6 +105,12 @@ hotfix/<short-slug>
 hotfix/v<version>-<short-slug>
 ```
 
+Stage branch:
+
+```text
+stage/<N>-<short-slug>
+```
+
 Builder work branch:
 
 ```text
@@ -117,6 +124,7 @@ agent/<issue-key>-<short-slug>
 - Do not use UUIDs.
 - Do not use internal task ids.
 - `work_branch` must start with `agent/<issue_key>-`.
+- `work_branch` is always cut from the current `stage_branch` tip.
 
 Slug rules:
 
@@ -134,6 +142,13 @@ hotfix/v<version>-<issue-key>-<short-slug>
 
 Coordinator decides branch fields before assigning Builder.
 
+Coordinator owns `source_branch` and `stage_branch`. At stage-1 start, if
+`source_branch_status` is `create_if_missing` and remote `source_branch` does
+not exist, Coordinator creates it from latest `base_branch` and pushes it. Then
+Coordinator cuts `stage_branch` from the `source_branch` tip and opens a draft
+stage PR `stage_branch -> source_branch`. Builder never creates `source_branch`
+or `stage_branch`.
+
 If the user does not specify a branch:
 
 ```md
@@ -143,7 +158,8 @@ source_branch: feature/<short-slug> or feature/v<version>-<short-slug>
 source_branch_status: create_if_missing
 issue_key: <visible issue key>
 work_branch: agent/<issue-key>-<short-slug>
-builder_pr_target: same as source_branch
+stage_branch: stage/<N>-<short-slug>
+builder_pr_target: stage_branch
 final_pr_target: main
 ```
 
@@ -156,7 +172,8 @@ source_branch: <existing feature/hotfix branch>
 source_branch_status: must_exist
 issue_key: <visible issue key>
 work_branch: agent/<issue-key>-<short-slug>
-builder_pr_target: same as source_branch
+stage_branch: stage/<N>-<short-slug>
+builder_pr_target: stage_branch
 final_pr_target: main
 ```
 
@@ -171,42 +188,65 @@ branch name.
 
 Builder must follow this order:
 
-1. Read all required branch fields, including `repo` and `source_branch_status`.
+1. Read all required branch fields, including `repo`, `stage_branch`, and
+   `source_branch_status`.
 2. Verify the selected repo matches `repo`.
-3. Verify `builder_pr_target == source_branch`.
+3. Verify `builder_pr_target == stage_branch`.
 4. Fetch latest `base_branch`.
-5. Check whether `source_branch` exists.
-6. If `source_branch_status = create_if_missing` and remote `source_branch` does
-   not exist, create it from latest `base_branch` and push it.
-7. If `source_branch_status = must_exist` and remote `source_branch` does not
-   exist, stop and report a blocker.
-8. Fetch latest `source_branch`.
-9. Create `work_branch` from `source_branch`.
-10. Commit only to `work_branch`.
-11. Open the Builder PR: `work_branch -> source_branch`.
-12. On the Builder PR, enabling "delete branch after merge" is allowed and
+5. Confirm remote `source_branch` exists. If it does not, stop and report a
+   blocker — Coordinator creates `source_branch`, not Builder.
+6. Confirm remote `stage_branch` exists. If it does not, stop and report a
+   blocker — Coordinator cuts `stage_branch` at stage start, not Builder.
+7. Fetch latest `stage_branch`.
+8. Create `work_branch` from the current `stage_branch` tip.
+9. Commit only to `work_branch`.
+10. Open the Builder PR: `work_branch -> stage_branch`.
+11. Before merging, update `work_branch` with the latest `stage_branch` and
+    resolve conflicts.
+12. Merge your own Builder PR into `stage_branch`. That is the only merge
+    Builder performs.
+13. On the Builder PR, enabling "delete branch after merge" is allowed and
     preferred, because the branch it deletes is `work_branch`.
-13. Do not open the Final PR.
+14. Do not open the stage PR or the Final PR.
+15. Do not merge the stage PR or the Final PR.
 
 Builder must stop and ask a human or the Coordinator if:
 
 - Required branch fields are missing.
 - The selected repo does not match `repo`.
-- `builder_pr_target != source_branch`.
+- `builder_pr_target != stage_branch`.
 - `issue_key` is missing or is not the visible issue key.
 - `work_branch` does not start with `agent/<issue_key>-`.
 - `work_branch` contains a UUID, project id, or internal task id instead of the
   visible issue key.
 - `source_branch_status` is neither `create_if_missing` nor `must_exist`.
-- `source_branch_status = must_exist` and remote `source_branch` does not exist.
-- The tool defaults the PR base to `main` or to `base_branch`.
+- Remote `source_branch` or `stage_branch` does not exist.
+- The tool defaults the PR base to `main`, `base_branch`, or `source_branch`.
 - The tool cannot control the PR base.
 - The PR diff includes unrelated changes.
 - The operation would commit to `base_branch`, `source_branch`, `main`, a
-  release branch, or a shared integration branch.
+  release branch, or a shared integration branch, except the one allowed merge
+  of the Builder PR into `stage_branch`.
 
 On GitHub the PR base is the target branch. `gh pr create --base <branch>` sets
 it explicitly; never rely on the repository default, which is `main`.
+
+## Stage PR Rules
+
+The Stage PR is:
+
+```text
+stage_branch -> source_branch
+```
+
+- Coordinator opens it as a draft at stage start.
+- Reviewer reviews this PR, not individual Builder PRs.
+- Coordinator marks it ready when every stage implementation child is
+  `in_review`, records `review_base_ref` (`source_branch` tip SHA) and
+  `review_head_ref` (stage branch tip SHA), then dispatches Reviewer.
+- Coordinator merges it only after Reviewer approval, and only when
+  `review_head_ref` still equals the stage branch tip.
+- After merge, Coordinator deletes `stage_branch`.
 
 ## Final PR Rules
 
@@ -216,21 +256,23 @@ The Final PR is:
 source_branch -> final_pr_target
 ```
 
-- Create it only after internal review passes and a human authorises it.
+- Create it after the last stage PR is merged into `source_branch`.
+- Do not ask permission to open it. The Final PR is the human review gate.
 - Do not delete `source_branch` after the final merge.
-- The Final PR is the human review gate. Agents open it and stop. A human
-  reviews and merges it; no agent merges a PR targeting `main`, `base_branch`,
-  or a protected branch.
+- No agent merges a PR targeting `main`, `base_branch`, `final_pr_target`, or a
+  protected branch.
 
 ## Reviewer Rules
 
 Reviewer checks branch safety as part of review:
 
-- The Builder PR base is `source_branch`.
-- Builder did not open the Final PR.
-- Builder changed only `work_branch`.
-- The Builder PR's delete-branch-on-merge setting, if enabled, deletes only
-  `work_branch`.
+- The review unit is the stage PR (`stage_branch -> source_branch`), or the
+  Final PR for a final review.
+- Every sub-ticket PR bases on `stage_branch` and is merged.
+- Builder did not open the stage PR or the Final PR.
+- Builder changed only `work_branch`, except the one merge into `stage_branch`.
+- Delete-branch-on-merge, if enabled, deletes only `work_branch` or the stage
+  branch.
 - No PR bases on `main` or `base_branch` without explicit human authorisation.
 
 ## Examples
@@ -244,7 +286,8 @@ source_branch: feature/guild-invite
 source_branch_status: create_if_missing
 issue_key: PROJ-12
 work_branch: agent/PROJ-12-guild-invite
-builder_pr_target: feature/guild-invite
+stage_branch: stage/1-guild-invite
+builder_pr_target: stage/1-guild-invite
 final_pr_target: main
 ```
 
@@ -257,7 +300,8 @@ source_branch: feature/v2.42-guild-invite
 source_branch_status: create_if_missing
 issue_key: PROJ-12
 work_branch: agent/PROJ-12-guild-invite
-builder_pr_target: feature/v2.42-guild-invite
+stage_branch: stage/1-guild-invite
+builder_pr_target: stage/1-guild-invite
 final_pr_target: main
 ```
 
@@ -270,7 +314,8 @@ source_branch: feature/v2.42-search-rework
 source_branch_status: must_exist
 issue_key: PROJ-13
 work_branch: agent/PROJ-13-invite-filter
-builder_pr_target: feature/v2.42-search-rework
+stage_branch: stage/1-invite-filter
+builder_pr_target: stage/1-invite-filter
 final_pr_target: main
 ```
 
@@ -283,6 +328,7 @@ source_branch: hotfix/v2.42-login
 source_branch_status: create_if_missing
 issue_key: PROJ-14
 work_branch: agent/PROJ-14-login
-builder_pr_target: hotfix/v2.42-login
+stage_branch: stage/1-login
+builder_pr_target: stage/1-login
 final_pr_target: main
 ```

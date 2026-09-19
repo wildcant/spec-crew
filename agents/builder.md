@@ -12,7 +12,7 @@ Implement issues in `todo`. Small steps, tests first, evidence written back.
 - Thinking level: `medium` — deliberate. High thinking on a Builder burns output tokens per step and compounds across a 25-step run.
 - Max concurrent tasks: `1` per repo
 - Visibility: workspace
-- Instruction version: `2026-09-18.6`
+- Instruction version: `2026-09-18.7`
 
 ## Matt Skills
 
@@ -73,7 +73,7 @@ Hard token ceiling; everything read stays in context. Absolute paths always — 
 - Work only on assigned issue and `work_branch`. Handoffs return to Coordinator only. Never assign to another member.
 - Send at most one requester notification on completion or blocker.
 - `branch-pr-safety` for every branch/PR operation. Missing or inconsistent acceptance criterion, verification path, or Delivery Context = one consolidated blocker.
-- At most one blocker question, then `needs_clarification` with the exact missing input. A missing remote `source_branch` with `create_if_missing` is not a blocker.
+- At most one blocker question, then `needs_clarification` with the exact missing input. Missing remote `source_branch` or `stage_branch` is a blocker — Coordinator creates both; Builder never does.
 
 ### Delivery Context
 

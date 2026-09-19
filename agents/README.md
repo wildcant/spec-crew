@@ -1,10 +1,10 @@
 # Agent Designs
 
-Five agents, designed around the workflow in this repository.
+Five agents, designed around the workflow in this repository. Four are squad members (Coordinator, Builder, Reviewer, Inspector). Planner is a workspace agent, invoked by parent status (`prd_draft`, `ready_for_slicing`, `needs_clarification`), not by squad assignment.
 
 ## Agents
 
-- [`Planner`](./planner.md): requirement clarification, PRD, architectural decisions, vertical-slice issue creation.
+- [`Planner`](./planner.md): requirement clarification, PRD, architectural decisions, vertical-slice issue creation. Not a squad member.
 - [`Coordinator`](./coordinator.md): the only dispatcher. Triage, dispatch, review orchestration, Final PR.
 - [`Builder`](./builder.md): implements issues in `todo`. Small steps, tests first.
 - [`Reviewer`](./reviewer.md): reviews implementation results. Finds bugs, regressions, missing tests, risk.
@@ -52,7 +52,7 @@ Initial review is cycle `0`. It may create one stage-feedback ticket spanning ev
 - **Final PR review and merge** on GitHub. No gate before opening the Final PR: the PR IS the gate. Asking permission to create it is a gate-in-front-of-a-gate.
 - **Parent `done` is human.** Builders land at `in_review`; Reviewer/Coordinator may close stage children only at the documented review gates.
 
-The Builder PR (`work_branch → source_branch`) is internal. After Reviewer approval, Coordinator merges where policy allows. Once reviewed head is verified in `source_branch`, Coordinator opens the Final PR, runs mandatory final review, moves parent to `in_review`, and stops.
+The Builder PR (`work_branch → stage_branch`) is internal; Builder merges it. Reviewer reviews the stage PR (`stage_branch → source_branch`). After approval, Coordinator merges the stage PR. Once reviewed head is verified in `source_branch`, Coordinator opens the Final PR, runs mandatory final review, moves parent to `in_review`, and stops. `work_branch` is always cut from the current `stage_branch` tip.
 
 ## Status Model
 
@@ -100,11 +100,11 @@ Coordinator is squad leader. The platform does not do these:
 
 Everyone uses [`branch-pr-safety`](../skills/branch-pr-safety/SKILL.md). Branch/PR fields are internal control plane, not default user-facing.
 
-Coordinator writes Delivery Context into each child before promotion: `repo`, `base_branch`, `source_branch`, `source_branch_status`, `issue_key`, `work_branch`, `builder_pr_target`, `final_pr_target`.
+Coordinator writes Delivery Context into each child before promotion: `repo`, `base_branch`, `source_branch`, `source_branch_status`, `issue_key`, `work_branch`, `stage_branch`, `builder_pr_target`, `final_pr_target`. `builder_pr_target` is `stage_branch`. `work_branch` is always cut from the current `stage_branch` tip.
 
 Builder reports: change, PR, build/test conclusion, risks, `source_branch`. Coordinator gets refs/diff/files/checks from Git/PR.
 
-Reviewer publishes: result, Builder PR, blocking findings, non-blocking follow-ups, test gaps, residual risks. Each finding has a stable id.
+Reviewer publishes: result, stage PR (or Final PR), blocking findings, non-blocking follow-ups, test gaps, residual risks. Each finding has a stable id.
 
 Inspector publishes: type, scope, result, action required, human approval, findings, evidence, actions, follow-up refs, decisions.
 
@@ -129,8 +129,7 @@ Builder runs at `medium` thinking — high thinking multiplies output tokens per
 ## Shared Communication Instruction
 
 ```md
-Terse English. [thing] [action] [reason]. Code symbols exact. No filler or hedging.
-Clear prose for security warnings and destructive actions.
+Caveman register in ALL output — chat, issue bodies, comments, packets. Drop articles and filler. Fragments over sentences. [thing] [action] [reason]. Code symbols, paths, commands, error strings exact. Never restate spec, diff, or code in a comment — reference `file:line` or link. Packets = `key: value` lines, no prose paragraphs. One line per finding, risk, decision. Completion summaries <= 10 lines. Full clear prose only for security warnings and destructive actions.
 ```
 
 ## Skill Precedence
@@ -146,4 +145,4 @@ Agent instructions and issue/PR context override loaded skills. Skills provide m
 3. Verify name, bound skills, max concurrency, instruction version.
 4. Run one side-effect-free smoke issue.
 
-Current versions: Planner `2026-09-14.3`; Coordinator `2026-09-14.3`; Builder `2026-09-14.2`; Reviewer `2026-09-14.2`; Inspector `2026-09-14.2`.
+Current versions: Planner `2026-09-18.4`; Coordinator `2026-09-18.9`; Builder `2026-09-18.7`; Reviewer `2026-09-18.5`; Inspector `2026-09-18.2`.
