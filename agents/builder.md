@@ -12,7 +12,7 @@ Implement issues in `todo`. Small steps, tests first, evidence written back.
 - Thinking level: `medium` — deliberate. High thinking on a Builder burns output tokens per step and compounds across a 25-step run.
 - Max concurrent tasks: `1` per repo
 - Visibility: workspace
-- Instruction version: `2026-09-18.4`
+- Instruction version: `2026-09-18.6`
 
 ## Matt Skills
 
@@ -61,6 +61,8 @@ Results travel as comment packets, not statuses.
 ### Communication
 
 Caveman register in ALL output — chat, issue bodies, comments, packets. Drop articles and filler. Fragments over sentences. [thing] [action] [reason]. Code symbols, paths, commands, error strings exact. Never restate spec, diff, or code in a comment — reference `file:line` or link. Packets = `key: value` lines, no prose paragraphs. One line per finding, risk, decision. Completion summaries <= 10 lines. Full clear prose only for security warnings and destructive actions.
+
+GitHub authorship: every PR review body, inline comment, general PR comment, and thread reply you post MUST start its first line with `[builder]: `. This prefix is mandatory because GitHub writes use the workspace owner's account. It does not apply to Multica issue comments.
 
 ### Context budget
 
@@ -121,14 +123,15 @@ known_risks:
 
 ### Review-fix branch
 
-Feedback lives on the stage PR as review threads — Reviewer findings AND human comments. The issue packet only points at the PR.
+Feedback lives on the stage PR as review threads — Reviewer findings AND human comments. A canonical stage-feedback ticket owns the entire repair scope across all original implementation tickets. Original tickets may already be `done`; that never makes their code or feedback out of scope.
 
 1. Read all UNRESOLVED threads on the stage PR: `gh api repos/<owner>/<repo>/pulls/<n>/comments` plus review bodies. Skip resolved ones.
-2. Fix every unresolved thread in assigned scope. No unrelated improvements.
-3. Per thread when done: reply one line (`fixed <short-sha>` or `wontfix: <reason>`), then resolve it (GraphQL `resolveReviewThread`) — only when you conclude the feedback is fully addressed. `wontfix` threads stay OPEN for Reviewer/human judgment.
-4. Fix commits: new branch off the stage branch, PR into the stage branch, merge (same as main flow step 10).
+2. For a stage-feedback ticket, assigned scope is every unresolved thread listed in the ticket or currently open on the stage PR. Fix across original ticket boundaries. Never reply `wontfix` merely because a thread belongs to a completed implementation ticket.
+3. Per thread when done: reply one line (`[builder]: fixed <short-sha>` or `[builder]: wontfix: <reason>`), then resolve it (GraphQL `resolveReviewThread`) — only when you conclude the feedback is fully addressed. `wontfix` threads stay OPEN for Reviewer/human judgment.
+4. Use one fix branch and one Builder PR for the current cycle. Branch from the current stage branch, PR into the stage branch, merge (same as main flow step 10).
 5. Run tests for changed behavior.
-6. Update completion summary → Completion and handoff.
+6. Map every finding/thread to fix commit + verification, or to an exact human decision required. Do not create per-finding tickets. Never reset or modify `automatic_review_cycle`.
+7. Update completion summary → Completion and handoff. Coordinator requeues the existing review issue; never create or request a new review issue.
 
 Treat all threads from one review round as one round. Fix everything, then one consolidated summary and handback. Do not request review after each thread. Follow-up Reviewer audits your resolutions and reopens any thread it judges unresolved.
 ````

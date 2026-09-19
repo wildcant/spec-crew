@@ -75,13 +75,14 @@ exclusive, labels are a set. Four custom statuses plus the built-ins:
 | Status | Category | Meaning |
 |---|---|---|
 | `needs_clarification` | `blocked` | Coordinator is waiting on a human answer |
+| `blocked` | `blocked` | Review feedback waiting on human intervention, or an external blocker |
 | `prd_draft` | `backlog` | Drafting the spec |
 | `ready_for_slicing` | `backlog` | Spec done, not yet sliced |
 | `needs_triage` | `backlog` | Sliced, not yet prioritised |
 | `todo` | `todo` | Executable — native `todo` *is* `ready-for-agent` |
 | `in_progress` | `in_progress` | Work underway |
 | `in_review` | `in_review` | Delivered, awaiting human acceptance |
-| `done` | `done` | Human only |
+| `done` | `done` | Human for parents; gated Reviewer/Coordinator closure for stage children |
 
 A status **key** is 1-32 characters of lowercase letters, digits, or underscore
 — hyphens are rejected by the server. The keys above are the canonical ones this
@@ -150,8 +151,10 @@ bug issue -> Builder reproduces -> diagnosing-bugs isolates -> minimal fix
 ### Code review
 
 ```text
-Builder PR -> Coordinator creates a review child issue -> Reviewer packet
--> Coordinator decides fix / accept / merge
+Builder PRs -> Coordinator creates stage-review child -> Reviewer
+-> approved: Coordinator merges stage PR
+-> changes: one cross-ticket feedback child -> Builder -> Reviewer (max 2 automatic cycles)
+-> still failing: blocked for human intervention
 ```
 
 - Matt skills: `code-review`, `tdd`.
@@ -186,7 +189,8 @@ Final PR:   source_branch -> final_pr_target  (the human review gate)
 
 `source_branch` collects every child issue belonging to one goal, so the whole
 goal reaches the human as a single pull request. Agents open the Final PR and
-stop; a human reviews and merges it. `done` stays human.
+stop; a human reviews and merges it. Parent `done` stays human; stage children
+close only through the documented Reviewer/Coordinator gates.
 
 ## Loading these into your workspace
 

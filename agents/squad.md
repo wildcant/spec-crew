@@ -35,13 +35,13 @@ inspection                                      -> Inspector
 ## Squad mechanics
 
 - **No fan-out.** Squad assignment enqueues leader only. Create children and assign each to a named member.
-- **Direct fix loops permitted; coordinator manages stage gates.** Reviewer assigns blocking findings directly back to Builder (`todo` + assign Builder). Non-blocking/approved review handoffs and builder completions return to Coordinator.
+- **Canonical stage-feedback loop.** Initial stage-review failure creates exactly one feedback child covering all unresolved Reviewer + human PR threads across original ticket boundaries. Reviewer may create and dispatch this ticket directly to Builder; this is the sole exception to Coordinator-only dispatch. Original implementation children move to `done` only after the feedback ticket exists. Two automatic Builder/follow-up-review cycles are allowed; cycle-2 failure moves the same ticket to `blocked` for human intervention. The review + feedback children keep the stage barrier open.
 - **Staged branch model.** Every stage branch `stage/<N>-<slug>` is cut from `source_branch` (the feature branch), never from a previous stage branch. Builders cut work branches from the `source_branch` tip and merge their own sub-ticket PRs into the stage branch. Reviewer reviews the stage PR (`stage/<N> → source_branch`). Coordinator merges the approved stage PR into `source_branch`; the next stage then cuts from the updated `source_branch`.
 - **`--stage N` for dependencies.** You wake when every sub-issue in a stage finishes (`done` or `cancelled`).
 - **Within-stage dependencies.** Planner records `depends_on` (same-stage issue keys or `none`) in each child's `## Dependencies` section at slicing. Coordinator enforces it at promotion: unblocked = every edge merged into the stage branch. Parallel work = whatever `depends_on` allows.
 - **Review = own child issue assigned to Reviewer.** Separate run, fresh context. Review unit is the stage PR, not individual sub-ticket PRs.
 - **Parent status is yours** while parent is assigned to this squad. Server doesn't flip it.
-- **`done` stays human.** Land at `in_review`. Close completed stage children at `done` after stage review approval.
+- **`done` stays gated.** Builders never write `done`. Reviewer may close reviewed implementation children only after creating/verifying the canonical feedback ticket; Coordinator closes review/feedback children after approval. Parent `done` stays human.
 - **Stage parallelism.** Parallelize independent tasks within the same stage by promoting them to `todo`. Serial execution across stages.
 
 ## Context budget
@@ -56,7 +56,7 @@ Every run has a hard token ceiling. Quota exhaustion kills runs silently.
 
 ## Collaboration
 
-- You are the only dispatcher, user entry point, and cross-agent state owner.
+- You are the dispatcher, user entry point, and cross-agent state owner. Reviewer has one narrow dispatch exception: the canonical stage-feedback ticket's initial dispatch plus one automatic retry, yielding two fix/re-review cycles.
 - Chat = up-front clarification only. Once parent issue exists, user tracks on the issue.
 - Return parent issue URL when aligned. Issue is the single source of truth.
 - In chat: lead with status and action, max 3 grouped questions, detail in issue.

@@ -26,7 +26,9 @@ Direct delegation rules:
 
 - Builder → `in_review` + hand back to Coordinator.
 - Reviewer:
-  - If blocking findings exist: updates implementation child to `todo` and assigns Builder directly.
+  - Initial blocking review: creates one stage-feedback ticket for all unresolved PR threads, verifies it, closes reviewed implementation children, and assigns the feedback ticket to Builder at `todo`.
+  - Cycle 1 still failing: updates the same feedback ticket and assigns it to Builder at `todo`.
+  - Cycle 2 still failing: moves the same feedback ticket to `blocked` for human intervention.
   - If approved: hands back to Coordinator (`in_review` + assign Coordinator). Coordinator merges and closes stage children.
 - Inspector → report/proposal only by default. `context` type may write approved files after human confirmation. Read-only types stay read-only. Dangerous actions require human confirmation.
 
@@ -36,17 +38,19 @@ Parallelism within stages is supported by promoting all independent stage tasks 
 
 User @-mentions only Coordinator. Coordinator passes requester, originating chat surface, and parent link to Builder. Builder may notify the requester once on completion or blocker. Reviewer leaves one @Coordinator summary. Inspector writes one result packet + hands back.
 
-Authority: dispatch = Coordinator only. Execution = Builder. Completion notification = Builder. Re-review trigger = Coordinator only.
+GitHub comments use the workspace owner's account, so every Coordinator, Builder, and Reviewer PR review body, inline comment, general comment, and thread reply starts with its role prefix: `[coordinator]: `, `[builder]: `, or `[reviewer]: `. Multica issue comments do not need this prefix because Multica already records the agent identity.
+
+Authority: dispatch = Coordinator, except Reviewer may dispatch the one canonical stage-feedback ticket and its first automatic retry. Execution = Builder. Completion notification = Builder. Re-review trigger = Coordinator only.
 
 ## Review Loop Budget
 
-One review run = one round. Builder fixes all findings, hands back once. Follow-up review verifies resolution + new P0/P1 regressions only. Max one automatic review-fix cycle per issue; second `changes-requested` → `needs_clarification` with human decision needed.
+Initial review is cycle `0`. It may create one stage-feedback ticket spanning every original implementation slice. Builder fixes all unresolved Reviewer + human threads, then follow-up review verifies resolutions + new P0/P1 regressions only. Two automatic fix/re-review cycles are allowed. Cycle-1 failure automatically returns the same ticket to Builder; cycle-2 failure moves it to `blocked` for human intervention. The counter never resets after human resume.
 
 ## Human Gates
 
 - **PRD confirmation.** Unconditional — even when the request arrives fully specified. A supplied spec is input, not approval.
 - **Final PR review and merge** on GitHub. No gate before opening the Final PR: the PR IS the gate. Asking permission to create it is a gate-in-front-of-a-gate.
-- **`done` is human.** Agents land at `in_review`.
+- **Parent `done` is human.** Builders land at `in_review`; Reviewer/Coordinator may close stage children only at the documented review gates.
 
 The Builder PR (`work_branch → source_branch`) is internal. After Reviewer approval, Coordinator merges where policy allows. Once reviewed head is verified in `source_branch`, Coordinator opens the Final PR, runs mandatory final review, moves parent to `in_review`, and stops.
 
@@ -59,14 +63,14 @@ Four custom statuses (create in Settings → Issue Statuses) plus built-ins:
 | Status | Category | Meaning |
 |---|---|---|
 | `needs_clarification` | `blocked` | Waiting on human answer |
-| `blocked` | `blocked` | Waiting on something non-decisional |
+| `blocked` | `blocked` | Review feedback waiting on human intervention, or an external blocker |
 | `prd_draft` | `backlog` | Drafting the spec |
 | `ready_for_slicing` | `backlog` | Spec done, not yet sliced |
 | `needs_triage` | `backlog` | Sliced, not yet prioritised |
 | `todo` | `todo` | Executable — `ready-for-agent` |
 | `in_progress` | `in_progress` | Work underway |
 | `in_review` | `in_review` | Delivered, awaiting acceptance |
-| `done` | `done` | Human only |
+| `done` | `done` | Human for parents; gated Reviewer/Coordinator closure for stage children |
 | `cancelled` | `cancelled` | Dropped |
 
 Key: `1-32` chars, lowercase + digits + underscore (no hyphens). `bootstrap/` rewrites instructions to match existing workspace keys.
@@ -84,11 +88,11 @@ prd_draft -> ready_for_slicing -> needs_triage   (backlog: parked)
 Coordinator is squad leader. The platform does not do these:
 
 - **No fan-out.** Squad assignment enqueues leader only. Coordinator creates children and assigns each to a named member.
-- **Direct fix loops permitted; coordinator manages stage gates.** Reviewer assigns blocking findings directly back to Builder (`todo` + assign Builder). Non-blocking/approved review handoffs and builder completions return to Coordinator. Handback assignment is the wake signal and must never carry `--no-start` — suppressing it silently stalls the chain.
+- **One stage-feedback loop; Coordinator manages stage gates.** Reviewer creates one cross-ticket feedback child on initial failure and may dispatch it for two automatic cycles. Original implementation children close only after that ticket exists. Non-blocking/approved review handoffs and Builder completions return to Coordinator. Handback assignment is the wake signal and must never carry `--no-start` — suppressing it silently stalls the chain.
 - **`--stage N` for dependencies.** Leader wakes when every sub-issue in a stage finishes (`done` or `cancelled`).
 - **Review = own child issue assigned to Reviewer.** One review per stage + one mandatory final review over `source_branch`. No per-ticket review — stage boundaries are where mistakes get expensive.
 - **No issue carries an open question.** Goal, scope, criteria, and every product decision settled before the issue exists. Non-blocking findings → proposals in comments, issues only when a human asks.
-- **Children close at `done`; parent does not.** Coordinator closes stage children after review approves — the stage barrier requires `done`/`cancelled` category. Members never close their own work. `done` on parent stays human.
+- **Children close at `done`; parent does not.** On initial failure Reviewer may close reviewed implementation children only after the canonical feedback child exists. Review + feedback children remain open, so the stage barrier cannot fire. Coordinator closes them after approval. `done` on parent stays human.
 - **Parent status = leader's** while assigned to this squad.
 - **Stage parallelism.** Parallelize independent tasks within the same stage by promoting them all to `todo`. Serial execution across stages.
 
