@@ -96,15 +96,17 @@ Everything is an environment variable; nothing needs the script edited.
 | `RUNTIME_CLAUDE_ID` | auto-detected by provider | Required only with multiple Claude runtimes |
 | `RUNTIME_CODEX_ID` | auto-detected by provider | Required only with multiple Codex runtimes |
 | `RUNTIME_ANTIGRAVITY_ID` | auto-detected by provider | Required only with multiple Antigravity runtimes |
+| `RUNTIME_OPENCODE_ID` | auto-detected by provider | Required only with multiple Opencode runtimes |
+| `RUNTIME_CURSOR_ID` | auto-detected by provider | Required only with multiple Cursor runtimes |
 | `RUNTIME_ID` | — | Fallback for an unrecognized model family |
 | `SQUAD_NAME` | `spec-crew` | |
 | `STATUS_MAP` | — | `canonical=actual,...` |
 | `REPOS` | — | Space-separated repo URLs to register |
 | `MODEL_PLANNER` | `claude-opus-4-6` | planning model; selects Claude runtime |
-| `MODEL_COORDINATOR` | `gpt-5.6-terra` | selects Codex runtime |
+| `MODEL_COORDINATOR` | `opencode/big-pickle` | selects Opencode runtime |
 | `MODEL_BUILDER` | `claude-opus-5` | coding-tier model |
 | `MODEL_REVIEWER` | `gpt-5.6-sol` | selects Codex runtime |
-| `MODEL_INSPECTOR` | `gemini-3.1-flash` | selects Antigravity runtime |
+| `MODEL_INSPECTOR` | `auto` | runtime default; selects Cursor runtime |
 | `THINKING_PLANNER` | `xhigh` | effort, `low`–`max` |
 | `THINKING_COORDINATOR` | `medium` | effort, runtime/model-specific |
 | `THINKING_BUILDER` | `medium` | effort, runtime/model-specific |
@@ -114,8 +116,9 @@ Everything is an environment variable; nothing needs the script edited.
 | `AUTOPILOT_CRON` | `0 9 * * 1` | |
 
 The bootstrap maps model families to runtime providers: Claude models use a
-Claude runtime, `gpt-5.6-sol` and `gpt-5.6-terra` use a Codex runtime, and
-Gemini models use an Antigravity runtime. A model name never changes the
+Claude runtime, `gpt-5.6-sol` and `gpt-5.6-terra` use a Codex runtime,
+`opencode/*` models use an Opencode runtime, `cursor/*` models use a
+Cursor runtime, and Gemini models use an Antigravity runtime. A model name never changes the
 runtime by itself; the script passes the resolved provider-specific
 `--runtime-id` on every agent create and update. If a provider has multiple
 runtimes, set its `RUNTIME_*_ID` explicitly.

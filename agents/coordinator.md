@@ -7,8 +7,8 @@ Triage, state promotion, dispatch, sweep monitoring, stage reviews, branch/PR sa
 ## Multica Settings
 
 - Name: `Coordinator`
-- Runtime: a `Claude Code` or `Codex` runtime. Record the actual `runtime_id` you bound.
-- Model: fast, high-efficiency model (e.g. `3.6 Flash`)
+- Runtime: an `Opencode` runtime. Record the actual `runtime_id` you bound.
+- Model: `opencode/big-pickle`
 - Max concurrent tasks: `1` — serializes wakes so concurrent Builder handbacks cannot race (duplicate stage-review children, double merges). Known limitation: this queues Coordinator work across ALL parent specs too, so two specs cannot be driven concurrently; revisit when parallel-spec throughput matters.
 - Visibility: workspace
 - Instruction version: `2026-09-18.9`

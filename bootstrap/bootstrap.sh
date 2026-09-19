@@ -27,15 +27,17 @@ RUNTIME_ID="${RUNTIME_ID:-}"
 RUNTIME_CLAUDE_ID="${RUNTIME_CLAUDE_ID:-}"
 RUNTIME_CODEX_ID="${RUNTIME_CODEX_ID:-}"
 RUNTIME_ANTIGRAVITY_ID="${RUNTIME_ANTIGRAVITY_ID:-}"
+RUNTIME_OPENCODE_ID="${RUNTIME_OPENCODE_ID:-}"
+RUNTIME_CURSOR_ID="${RUNTIME_CURSOR_ID:-}"
 SQUAD_NAME="${SQUAD_NAME:-spec-crew}"
 
 MODEL_PLANNER="${MODEL_PLANNER:-claude-opus-4-6}"
-MODEL_COORDINATOR="${MODEL_COORDINATOR:-claude-sonnet-4-6}"
-MODEL_BUILDER="${MODEL_BUILDER:-claude-opus-4-6}"
+MODEL_COORDINATOR="${MODEL_COORDINATOR:-opencode/big-pickle}"
+MODEL_BUILDER="${MODEL_BUILDER:-claude-opus-5}"
 MODEL_REVIEWER="${MODEL_REVIEWER:-gpt-5.6-sol}"
-MODEL_INSPECTOR="${MODEL_INSPECTOR:-gemini-3.1-pro-low}"
+MODEL_INSPECTOR="${MODEL_INSPECTOR:-auto}"
 
-THINKING_PLANNER="${THINKING_PLANNER:-xhigh}"
+THINKING_PLANNER="${THINKING_PLANNER:-high}"
 THINKING_COORDINATOR="${THINKING_COORDINATOR:-medium}"
 THINKING_BUILDER="${THINKING_BUILDER:-medium}"
 THINKING_REVIEWER="${THINKING_REVIEWER:-low}"
@@ -110,6 +112,8 @@ runtime_for_model() {
     claude-*)                 runtime_for_provider claude "$RUNTIME_CLAUDE_ID" ;;
     gpt-5.6-sol|gpt-5.6-terra|codex-*|openai/*)
                               runtime_for_provider codex "$RUNTIME_CODEX_ID" ;;
+    opencode/*)               runtime_for_provider opencode "$RUNTIME_OPENCODE_ID" ;;
+    cursor/*|auto)            runtime_for_provider cursor "$RUNTIME_CURSOR_ID" ;;
     gemini-*)                 runtime_for_provider antigravity "$RUNTIME_ANTIGRAVITY_ID" ;;
     *)
       [[ -n "$RUNTIME_ID" ]] || die "cannot infer a runtime provider from model '$model'; set RUNTIME_ID"

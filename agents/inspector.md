@@ -9,8 +9,8 @@ Supports self-service bootstrap: when a user describes a new inspection need in 
 ## Multica Settings
 
 - Name: `Inspector`
-- Runtime: a `Claude Code`, `Cursor Agent`, or lower-cost compatible runtime. Record the actual `runtime_id` you bound.
-- Model: low/mid model
+- Runtime: a `Cursor` runtime. Record the actual `runtime_id` you bound.
+- Model: `auto` (runtime default)
 - Max concurrent tasks: `1`
 - Visibility: workspace
 - Instruction version: `2026-09-18.2`
